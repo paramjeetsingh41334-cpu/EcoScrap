@@ -1,0 +1,10 @@
+import {Router} from 'express';
+import bcrypt from 'bcryptjs';
+import {z} from 'zod';
+import User from '../models/User.js';
+import {signToken} from '../utils/auth.js';
+const r=Router();
+const schema=z.object({name:z.string().min(2).max(100),phone:z.string().min(7).max(20),email:z.string().email().optional().or(z.literal('')),password:z.string().min(6).max(100),role:z.enum(['USER','COLLECTOR','RECYCLER','ORGANIZATION']).default('USER')});
+r.post('/register',async(req,res,next)=>{try{const data=schema.parse(req.body); const exists=await User.findOne({phone:data.phone}); if(exists)return res.status(409).json({message:'Phone already registered'}); const passwordHash=await bcrypt.hash(data.password,12); const user=await User.create({...data,passwordHash}); const token=signToken(user); res.status(201).json({token,user:{id:user._id,name:user.name,phone:user.phone,role:user.role,greenCredits:user.greenCredits}})}catch(e){next(e)}});
+r.post('/login',async(req,res,next)=>{try{const {phone,password}=req.body; const user=await User.findOne({phone}); if(!user||!(await bcrypt.compare(password,user.passwordHash)))return res.status(401).json({message:'Invalid credentials'}); res.json({token:signToken(user),user:{id:user._id,name:user.name,phone:user.phone,role:user.role,greenCredits:user.greenCredits}})}catch(e){next(e)}});
+export default r;
