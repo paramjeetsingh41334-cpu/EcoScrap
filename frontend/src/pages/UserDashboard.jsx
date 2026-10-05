@@ -12,7 +12,7 @@ import CreateScrapLot from "../components/CreateScrapLot.jsx";
 import CreateAuction from "../components/CreateAuction.jsx";
 import CollectorDashboard from "./CollectorDashboard.jsx";
 import MyAuctions from "../components/MyAuction.jsx";
-
+import DashboardLayout from "../components/DashboardLayout.jsx";
 
 function UserDashboard({ user, onLogout }) {
 
@@ -20,6 +20,7 @@ function UserDashboard({ user, onLogout }) {
 
     const [summary, setSummary] = useState(null);
     const [scrap, setScrap] = useState([]);
+    const [activePage, setActivePage] = useState("dashboard");
 
     const [selectedScrap, setSelectedScrap] = useState("");
     const [weight, setWeight] = useState("");
@@ -34,6 +35,14 @@ function UserDashboard({ user, onLogout }) {
 
     const [statusMessage, setStatusMessage] = useState("");
     const [actualWeight, setActualWeight] = useState("");
+
+    const [segregationWeights, setSegregationWeights] = useState({
+        Paper: "",
+        Plastic: "",
+        Metal: "",
+        "E-waste": "",
+        Cardboard: "",
+    });
 
     
 
@@ -234,6 +243,18 @@ const updatePickupStatus = async (pickupId, status) => {
 
 
 //for actual weight
+const segregationTotal = Object.values(segregationWeights).reduce(
+    (total, value) => total + (Number(value) || 0),
+    0
+);
+
+const updateSegregationWeight = (category, value) => {
+    setSegregationWeights((current) => ({
+        ...current,
+        [category]: value,
+    }));
+};
+
 const completePickup = async (pickupId) => {
     if (!actualWeight || Number(actualWeight) <= 0) {
         alert(t("enterValidActualWeight"));
@@ -252,6 +273,13 @@ const completePickup = async (pickupId) => {
         setMyPickups(updatedPickups);
 
         setActualWeight("");
+        setSegregationWeights({
+            Paper: "",
+            Plastic: "",
+            Metal: "",
+            "E-waste": "",
+            Cardboard: "",
+        });
         setStatusMessage(t("pickupCompletedSuccessfully"));
     } catch (error) {
         alert(error.message);
@@ -396,28 +424,24 @@ const openReceipt = (pickup) => {
 };
 
 
+
+
     return (
-        <div className="app">
+        <DashboardLayout
+            user={user}
+            onLogout={onLogout}
+            activePage={activePage}
+            onNavigate={setActivePage}
+        >
+            <div className="app">
 
-            <header>
 
-                <div>
-                    <b>♻️ EcoNexus</b>
-
-                    <span className="role">
-                        {user.role}
-                    </span>
-                </div>
-
-                <button onClick={onLogout}>
-                    {t("logout")}
-                </button>
-
-            </header>
 
 
             <main>
 
+                {activePage === "dashboard" && (
+                    <>
                 {/* Welcome */}
 
                 <section className="hero">
@@ -531,12 +555,17 @@ const openReceipt = (pickup) => {
 
 </section>
 
+                    </>
+                )}
+
+                {activePage === "notifications" && <Notifications />}
+
+                {activePage === "marketplace" && (
+                    <>
 <Notifications />
 <RecyclerMarketplace />
 <PurchaseRequests />
 <MyPurchaseRequests />
-<WasteTraceability />
-<TransactionHistory />
 
 
 {user.role === "ORGANIZATION" && (
@@ -546,9 +575,40 @@ const openReceipt = (pickup) => {
 {(user.role === "ORGANIZATION" || user.role === "COLLECTOR") && (
     <MyAuctions />
 )}
+                    </>
+                )}
 
+                {activePage === "traceability" && <WasteTraceability />}
 
+                {activePage === "transactions" && <TransactionHistory />}
 
+                {activePage === "analytics" && (
+                    <section className="panel">
+                        <h3>📈 Analytics</h3>
+                        <p>Your EcoScrap activity summary.</p>
+                        <div className="cards">
+                            <div className="card">
+                                <small>{t("pickups")}</small>
+                                <strong>{summary?.pickups || 0}</strong>
+                            </div>
+                            <div className="card">
+                                <small>{t("completed")}</small>
+                                <strong>{summary?.completed || 0}</strong>
+                            </div>
+                            <div className="card">
+                                <small>{t("recycledKg")}</small>
+                                <strong>{summary?.kg || 0}</strong>
+                            </div>
+                            <div className="card">
+                                <small>{t("greenCredits")}</small>
+                                <strong>{summary?.greenCredits || 0}</strong>
+                            </div>
+                        </div>
+                    </section>
+                )}
+
+                {activePage === "pickup" && (
+                    <>
                 {/* Pickup Booking */}
 
 <section className="panel">
@@ -606,9 +666,79 @@ const openReceipt = (pickup) => {
             </div>
         )}
 
-        <button onClick={addPickupItem}>
-            + {t("addScrapItemButton")}
-        </button>
+        {/* Scrap selection + estimated weight */}
+        <div
+            className="calculator"
+            style={{
+                marginTop: "16px",
+                padding: "16px",
+                border: "1px solid #dfe9e2",
+                borderRadius: "12px",
+                background: "#f8fcf9",
+            }}
+        >
+            <h4 style={{ marginTop: 0 }}>
+                ♻️ Select & Add Scrap Material
+            </h4>
+
+            <label>
+                Scrap Material
+            </label>
+
+            <select
+                value={selectedScrap}
+                onChange={(e) => setSelectedScrap(e.target.value)}
+            >
+                <option value="">
+                    Select scrap material
+                </option>
+
+                {scrap.map((item) => (
+                    <option key={item._id} value={item._id}>
+                        {item.name} — ₹{item.rate}/kg
+                    </option>
+                ))}
+            </select>
+
+            <label style={{ marginTop: "12px" }}>
+                Estimated Weight (kg)
+            </label>
+
+            <input
+                type="number"
+                min="0.1"
+                step="0.1"
+                placeholder="Enter weight"
+                value={weight}
+                onChange={(e) => setWeight(e.target.value)}
+            />
+
+            {selectedMaterial && weight && Number(weight) > 0 && (
+                <div className="calculation" style={{ marginTop: "10px" }}>
+                    <p>
+                        Rate:
+                        <strong style={{ marginLeft: "8px" }}>
+                            ₹{selectedMaterial.rate}/kg
+                        </strong>
+                    </p>
+
+                    <p>
+                        Estimated value:
+                        <strong style={{ marginLeft: "8px" }}>
+                            ₹{(Number(weight) * selectedMaterial.rate).toFixed(2)}
+                        </strong>
+                    </p>
+                </div>
+            )}
+
+            <button
+                type="button"
+                onClick={addPickupItem}
+                disabled={!selectedScrap || !weight || Number(weight) <= 0}
+            >
+                + {t("addScrapItemButton")}
+            </button>
+        </div>
 
         {pickupItems.length > 0 && (
             <div className="calculation">
@@ -650,7 +780,11 @@ const openReceipt = (pickup) => {
     </div>
 
 </section>
+                    </>
+                )}
 
+                {activePage === "my-pickups" && (
+                    <>
 {/* Collector Dashboard */}
 
 {user.role === "COLLECTOR" && (
@@ -748,6 +882,75 @@ const openReceipt = (pickup) => {
     pickup.status === "ARRIVED" && (
         <div className="complete-pickup">
 
+            <h4 style={{ marginTop: 0 }}>
+                ♻️ Scrap Segregation & Digital Weighing
+            </h4>
+
+            <p style={{ marginTop: "4px", color: "#66756c" }}>
+                Enter the actual weight collected for each scrap category.
+            </p>
+
+            <div
+                className="segregation-grid"
+                style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                    gap: "10px",
+                    margin: "14px 0",
+                }}
+            >
+                {Object.keys(segregationWeights).map((category) => (
+                    <label
+                        key={category}
+                        style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: "6px",
+                            fontSize: "13px",
+                            fontWeight: "600",
+                        }}
+                    >
+                        <span>
+                            {category === "Paper" && "📄 "}
+                            {category === "Plastic" && "🧴 "}
+                            {category === "Metal" && "🔩 "}
+                            {category === "E-waste" && "💻 "}
+                            {category === "Cardboard" && "📦 "}
+                            {category}
+                        </span>
+
+                        <input
+                            type="number"
+                            min="0"
+                            step="0.1"
+                            placeholder="0 kg"
+                            value={segregationWeights[category]}
+                            onChange={(e) =>
+                                updateSegregationWeight(
+                                    category,
+                                    e.target.value
+                                )
+                            }
+                        />
+                    </label>
+                ))}
+            </div>
+
+            <div
+                className="calculation"
+                style={{
+                    marginTop: "10px",
+                    marginBottom: "14px",
+                }}
+            >
+                <p>
+                    Total segregated weight:
+                    <strong style={{ marginLeft: "8px" }}>
+                        {segregationTotal.toFixed(1)} kg
+                    </strong>
+                </p>
+            </div>
+
             <label>
                 ⚖️ {t("actualWeightKg")}
             </label>
@@ -764,14 +967,27 @@ const openReceipt = (pickup) => {
             />
 
             <button
+                type="button"
+                onClick={() => {
+                    if (segregationTotal <= 0) {
+                        alert("Please enter at least one segregated scrap weight.");
+                        return;
+                    }
+
+                    setActualWeight(segregationTotal.toFixed(1));
+                }}
+                style={{ marginBottom: "10px" }}
+            >
+                ⚖️ Use Segregated Total
+            </button>
+
+            <button
                 onClick={() =>
                     completePickup(pickup._id)
                 }
             >
                 ✅ {t("completePickup")}
             </button>
-
-            
 
         </div>
     )}
@@ -990,10 +1206,13 @@ const openReceipt = (pickup) => {
                     </div>
 
                 </section>
+                    </>
+                )}
 
             </main>
 
-        </div>
+            </div>
+        </DashboardLayout>
     );
 }
 
