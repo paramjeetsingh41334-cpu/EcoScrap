@@ -18,6 +18,8 @@ import SmartRoute from "../components/SmartRoute.jsx";
 function CollectorDashboard({ user, onLogout }) {
     const { t } = useLanguage();
 
+    const [activeSection, setActiveSection] = useState("dashboard");
+
     const [summary, setSummary] = useState(null);
     const [scrap, setScrap] = useState([]);
 
@@ -36,6 +38,7 @@ function CollectorDashboard({ user, onLogout }) {
 
     const [statusMessage, setStatusMessage] = useState("");
     const [actualWeight, setActualWeight] = useState("");
+    const [segregationWeights, setSegregationWeights] = useState({});
 
     const [smartRoute, setSmartRoute] = useState(null);
     const [routeLoading, setRouteLoading] = useState(false);
@@ -255,6 +258,11 @@ function CollectorDashboard({ user, onLogout }) {
 
             setMyPickups(updatedPickups);
 
+            if (status === "ARRIVED") {
+                setSegregationWeights({});
+                setActualWeight("");
+            }
+
             window.dispatchEvent(
                 new Event("ecoscrap:route-refresh")
             );
@@ -268,19 +276,40 @@ function CollectorDashboard({ user, onLogout }) {
     };
 
     const completePickup = async (pickupId) => {
-        if (
-            !actualWeight ||
-            Number(actualWeight) <= 0
-        ) {
-            alert(t("enterValidActualWeight"));
+        const totalCategoryWeight = Object.values(
+            segregationWeights
+        ).reduce(
+            (sum, value) => sum + Number(value || 0),
+            0
+        );
+
+        if (totalCategoryWeight <= 0) {
+            alert("Enter the actual weight for at least one waste category.");
             return;
         }
+
+        const pickup = myPickups.find(
+            (item) => item._id === pickupId
+        );
+
+        const segregation = (pickup?.items || [])
+            .map((item) => ({
+                scrap: item.scrap?._id || item.scrap,
+                name: item.scrap?.name || "Scrap",
+                weight: Number(
+                    segregationWeights[
+                        item.scrap?._id || item.scrap
+                    ] || 0
+                )
+            }))
+            .filter((item) => item.weight > 0);
 
         try {
             await api(`/pickups/${pickupId}/complete`, {
                 method: "PATCH",
                 body: JSON.stringify({
-                    actualWeight: Number(actualWeight)
+                    actualWeight: totalCategoryWeight,
+                    segregation
                 })
             });
 
@@ -295,6 +324,7 @@ function CollectorDashboard({ user, onLogout }) {
             );
 
             setActualWeight("");
+            setSegregationWeights({});
             setStatusMessage(
                 t("pickupCompletedSuccessfully")
             );
@@ -476,9 +506,85 @@ function CollectorDashboard({ user, onLogout }) {
             </header>
 
             <main className="collector-main">
+                <div
+                    className="collector-dashboard-layout"
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "240px minmax(0, 1fr)",
+                        gap: "24px",
+                        alignItems: "start"
+                    }}
+                >
+                    <aside
+                        className="collector-sidebar"
+                        style={{
+                            position: "sticky",
+                            top: "20px",
+                            background: "#ffffff",
+                            border: "1px solid #e5ece8",
+                            borderRadius: "20px",
+                            padding: "18px",
+                            boxShadow: "0 10px 30px rgba(20,70,45,0.08)"
+                        }}
+                    >
+                        <div style={{ marginBottom: "16px" }}>
+                            <small style={{ color: "#6b7c74", fontWeight: 700 }}>COLLECTOR PANEL</small>
+                            <h3 style={{ margin: "6px 0 0" }}>♻️ EcoScrap</h3>
+                        </div>
+
+                        <nav style={{ display: "grid", gap: "7px" }}>
+                            {[
+                                ["dashboard", "🏠", "Dashboard"],
+                                ["notifications", "🔔", "Notifications"],
+                                ["pickup-requests", "📥", "Pickup Requests"],
+                                ["my-pickups", "🚚", "My Pickups"],
+                                ["scrap-lots", "📦", "Scrap Lots"],
+                                ["smart-route", "🗺️", "Smart Route"],
+                                ["marketplace", "🛒", "Marketplace"],
+                                ["traceability", "🔗", "Traceability"],
+                                ["transactions", "💳", "Transactions"],
+                                ["analytics", "📊", "Analytics"],
+                                ["pricing", "♻️", "Pricing & Booking"]
+                            ].map(([key, icon, label]) => (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    onClick={() => setActiveSection(key)}
+                                    style={{
+                                        width: "100%",
+                                        border: "0",
+                                        borderRadius: "12px",
+                                        padding: "12px 13px",
+                                        textAlign: "left",
+                                        cursor: "pointer",
+                                        fontWeight: 700,
+                                        background: activeSection === key ? "#176b43" : "transparent",
+                                        color: activeSection === key ? "#fff" : "#29443a",
+                                        transition: "0.2s"
+                                    }}
+                                >
+                                    <span style={{ marginRight: "9px" }}>{icon}</span>
+                                    {label}
+                                </button>
+                            ))}
+                        </nav>
+
+                        <div
+                            style={{
+                                marginTop: "18px",
+                                paddingTop: "15px",
+                                borderTop: "1px solid #e8efeb"
+                            }}
+                        >
+                            <small style={{ color: "#718079" }}>Signed in as</small>
+                            <strong style={{ display: "block", marginTop: "4px" }}>{user.name}</strong>
+                        </div>
+                    </aside>
+
+                    <div className="collector-dashboard-content">
 
                 {/* HERO */}
-                <section className="collector-hero">
+                <section className="collector-hero" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
                     <div>
                         <span className="collector-eyebrow">
                             ECOSCRAP DASHBOARD
@@ -501,7 +607,7 @@ function CollectorDashboard({ user, onLogout }) {
                 </section>
 
                 {/* STATISTICS */}
-                <section className="collector-stat-grid">
+                <section className="collector-stat-grid" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
 
                     <div className="collector-stat-card">
                         <div className="collector-stat-icon">
@@ -576,7 +682,7 @@ function CollectorDashboard({ user, onLogout }) {
                 </section>
 
                 {/* ENVIRONMENTAL IMPACT */}
-                <section className="collector-impact-section">
+                <section className="collector-impact-section" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
                     <div className="collector-section-heading">
                         <div>
                             <span>
@@ -662,29 +768,49 @@ function CollectorDashboard({ user, onLogout }) {
 
                 {/* ADVANCED COMPONENTS */}
                 <div className="collector-feature-stack">
-                    <Notifications />
+                    <div style={{ display: activeSection === "notifications" ? "block" : "none" }}>
+                        <Notifications />
+                    </div>
 
-                    <CreateAuction />
+                    <div style={{ display: activeSection === "marketplace" ? "block" : "none" }}>
+                        <CreateAuction />
+                    </div>
 
-                    <MyAuctions />
+                    <div style={{ display: activeSection === "marketplace" ? "block" : "none" }}>
+                        <MyAuctions />
+                    </div>
 
-                    <RecyclerMarketplace />
+                    <div style={{ display: activeSection === "marketplace" ? "block" : "none" }}>
+                        <RecyclerMarketplace />
+                    </div>
 
-                    <PurchaseRequests />
+                    <div style={{ display: activeSection === "marketplace" ? "block" : "none" }}>
+                        <PurchaseRequests />
+                    </div>
 
-                    <MyPurchaseRequests />
+                    <div style={{ display: activeSection === "marketplace" ? "block" : "none" }}>
+                        <MyPurchaseRequests />
+                    </div>
 
-                    <WasteTraceability />
+                    <div style={{ display: activeSection === "traceability" ? "block" : "none" }}>
+                        <WasteTraceability />
+                    </div>
 
-                    <TransactionHistory />
+                    <div style={{ display: activeSection === "transactions" ? "block" : "none" }}>
+                        <TransactionHistory />
+                    </div>
 
-                    <RecyclingCertificates />
+                    <div style={{ display: activeSection === "analytics" ? "block" : "none" }}>
+                        <RecyclingCertificates />
+                    </div>
 
-                    <AdvancedAnalytics />
+                    <div style={{ display: activeSection === "analytics" ? "block" : "none" }}>
+                        <AdvancedAnalytics />
+                    </div>
                 </div>
 
                 {/* BOOK PICKUP */}
-                <section className="collector-panel">
+                <section className="collector-panel" style={{ display: activeSection === "pricing" ? "block" : "none" }}>
 
                     <div className="collector-panel-header">
                         <div>
@@ -841,7 +967,7 @@ function CollectorDashboard({ user, onLogout }) {
 
                 {/* AVAILABLE PICKUPS */}
                 {user.role === "COLLECTOR" && (
-                    <section className="collector-panel">
+                    <section className="collector-panel" style={{ display: activeSection === "pickup-requests" ? "block" : "none" }}>
 
                         <div className="collector-panel-header">
                             <div>
@@ -992,10 +1118,12 @@ function CollectorDashboard({ user, onLogout }) {
                 )}
 
                 {/* SMART ROUTE */}
-                <SmartRoute />
+                <div style={{ display: activeSection === "smart-route" ? "block" : "none" }}>
+                    <SmartRoute />
+                </div>
 
                 {/* MY PICKUPS */}
-                <section className="collector-panel">
+                <section className="collector-panel" style={{ display: activeSection === "my-pickups" ? "block" : "none" }}>
 
                     <div className="collector-panel-header">
                         <div>
@@ -1212,33 +1340,50 @@ function CollectorDashboard({ user, onLogout }) {
                                             pickup.status ===
                                                 "ARRIVED" && (
                                                 <div className="collector-complete-box">
-                                                    <label>
-                                                        ⚖️{" "}
-                                                        {t(
-                                                            "actualWeightKg"
-                                                        )}
-                                                    </label>
+                                                    <h4>♻️ Collect & Categorize Waste</h4>
+                                                    <p>Enter the actual weight collected for each category.</p>
 
-                                                    <input
-                                                        type="number"
-                                                        min="0.1"
-                                                        step="0.1"
-                                                        placeholder={t(
-                                                            "enterActualWeight"
-                                                        )}
-                                                        value={
-                                                            actualWeight
-                                                        }
-                                                        onChange={(
-                                                            e
-                                                        ) =>
-                                                            setActualWeight(
-                                                                e
-                                                                    .target
-                                                                    .value
-                                                            )
-                                                        }
-                                                    />
+                                                    {(pickup.items || []).map((item, index) => {
+                                                        const scrapId =
+                                                            item.scrap?._id || item.scrap;
+
+                                                        return (
+                                                            <div
+                                                                key={scrapId || index}
+                                                                className="collector-result-row"
+                                                            >
+                                                                <span>
+                                                                    ♻️ {item.scrap?.name || "Scrap"}
+                                                                </span>
+
+                                                                <input
+                                                                    type="number"
+                                                                    min="0"
+                                                                    step="0.1"
+                                                                    placeholder="Actual kg"
+                                                                    value={
+                                                                        segregationWeights[scrapId] || ""
+                                                                    }
+                                                                    onChange={(e) => {
+                                                                        const value = e.target.value;
+                                                                        setSegregationWeights((current) => ({
+                                                                            ...current,
+                                                                            [scrapId]: value
+                                                                        }));
+                                                                    }}
+                                                                />
+                                                            </div>
+                                                        );
+                                                    })}
+
+                                                    <div className="collector-result-row amount-row">
+                                                        <span>⚖️ <strong>Actual Total Weight</strong></span>
+                                                        <strong>
+                                                            {Object.values(segregationWeights)
+                                                                .reduce((sum, value) => sum + Number(value || 0), 0)
+                                                                .toFixed(1)} kg
+                                                        </strong>
+                                                    </div>
 
                                                     <button
                                                         onClick={() =>
@@ -1247,10 +1392,7 @@ function CollectorDashboard({ user, onLogout }) {
                                                             )
                                                         }
                                                     >
-                                                        ✅{" "}
-                                                        {t(
-                                                            "completePickup"
-                                                        )}
+                                                        ✅ {t("completePickup")}
                                                     </button>
                                                 </div>
                                             )}
@@ -1343,7 +1485,7 @@ function CollectorDashboard({ user, onLogout }) {
                 </section>
 
                 {/* SCRAP PRICE LIST */}
-                <section className="collector-panel">
+                <section className="collector-panel" style={{ display: activeSection === "pricing" ? "block" : "none" }}>
 
                     <div className="collector-panel-header">
                         <div>
@@ -1388,7 +1530,7 @@ function CollectorDashboard({ user, onLogout }) {
                 </section>
 
                 {/* PRICE CALCULATOR */}
-                <section className="collector-panel">
+                <section className="collector-panel" style={{ display: activeSection === "pricing" ? "block" : "none" }}>
 
                     <div className="collector-panel-header">
                         <div>
@@ -1535,10 +1677,12 @@ function CollectorDashboard({ user, onLogout }) {
                 </section>
 
                 {/* CREATE SCRAP LOT */}
-                <CreateScrapLot />
+                <div style={{ display: activeSection === "scrap-lots" ? "block" : "none" }}>
+                    <CreateScrapLot />
+                </div>
 
                 {/* RECYCLER REQUESTS */}
-                <section className="collector-panel">
+                <section className="collector-panel" style={{ display: activeSection === "scrap-lots" ? "block" : "none" }}>
 
                     <div className="collector-panel-header">
                         <div>
@@ -1771,7 +1915,10 @@ function CollectorDashboard({ user, onLogout }) {
                 </section>
 
                 {/* MAIN FLOW */}
-                <section className="collector-flow-section">
+                <section
+                    className="collector-flow-section"
+                    style={{ display: activeSection === "dashboard" ? "block" : "none" }}
+                >
 
                     <div className="collector-flow-icon">
                         🚀
@@ -1797,6 +1944,8 @@ function CollectorDashboard({ user, onLogout }) {
 
                 </section>
 
+                    </div>
+                </div>
             </main>
         </div>
     );

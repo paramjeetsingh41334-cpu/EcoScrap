@@ -136,6 +136,11 @@ function UserDashboard({ user, onLogout }) {
             method: "POST",
             body: JSON.stringify({
                 items: pickupItems,
+                segregation: pickupItems.map(item => ({
+                    scrap: item.scrap,
+                    name: item.scrap?.name || "Scrap",
+                    weight: Number(item.estimatedWeight)
+                })),
                 address,
                 slot,
                 latitude,
@@ -438,7 +443,48 @@ const openReceipt = (pickup) => {
 
 
 
-            <main>
+            <div style={{
+    marginBottom: "20px",
+    padding: "18px",
+    border: "1px solid #dce9e2",
+    borderRadius: "14px",
+    background: "#f7fbf8"
+}}>
+    <strong style={{ color: "#176b43", fontSize: "16px" }}>
+        ♻️ Core Waste Journey
+    </strong>
+    <div style={{
+        marginTop: "10px",
+        display: "flex",
+        flexWrap: "wrap",
+        gap: "8px",
+        alignItems: "center",
+        fontSize: "13px"
+    }}>
+        {[
+            "♻️ Segregate",
+            "📱 Collect",
+            "⚖️ Record",
+            "🧾 Receipt",
+            "🔗 Trace",
+            "🏭 Recycle / Dispose"
+        ].map((step, index) => (
+            <React.Fragment key={step}>
+                <span style={{
+                    padding: "7px 10px",
+                    borderRadius: "999px",
+                    background: "#fff",
+                    border: "1px solid #dce9e2",
+                    color: "#176b43",
+                    fontWeight: 600
+                }}>{step}</span>
+                {index < 5 && <span style={{ color: "#98a69e" }}>→</span>}
+            </React.Fragment>
+        ))}
+    </div>
+</div>
+
+<main>
 
                 {activePage === "dashboard" && (
                     <>
@@ -562,7 +608,10 @@ const openReceipt = (pickup) => {
 
                 {activePage === "marketplace" && (
                     <>
-<Notifications />
+<section className="panel">
+    <h3>🛒 Marketplace</h3>
+    <p>Explore recyclable materials, requests and marketplace activity.</p>
+</section>
 <RecyclerMarketplace />
 <PurchaseRequests />
 <MyPurchaseRequests />
@@ -585,7 +634,7 @@ const openReceipt = (pickup) => {
                 {activePage === "analytics" && (
                     <section className="panel">
                         <h3>📈 Analytics</h3>
-                        <p>Your EcoScrap activity summary.</p>
+                        <p>Track your EcoScrap pickup, recycling and Green Credit activity.</p>
                         <div className="cards">
                             <div className="card">
                                 <small>{t("pickups")}</small>
@@ -609,177 +658,216 @@ const openReceipt = (pickup) => {
 
                 {activePage === "pickup" && (
                     <>
-                {/* Pickup Booking */}
+                        {/* Waste Segregation + Pickup Booking */}
+                        <section className="panel">
+                            <h3>♻️ Waste Segregation Guide</h3>
+                            <p>
+                                Separate your waste by category, enter the estimated weight,
+                                review the value, and then book your pickup.
+                            </p>
 
-<section className="panel">
+                            <div
+                                style={{
+                                    display: "grid",
+                                    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+                                    gap: "12px",
+                                    margin: "18px 0"
+                                }}
+                            >
+                                {[
+                                    ["📄", "Paper", "Newspapers, paper"],
+                                    ["🥤", "Plastic", "Bottles, containers"],
+                                    ["🔩", "Metal", "Iron, aluminium, cans"],
+                                    ["💻", "E-waste", "Mobiles, electronics"],
+                                    ["📦", "Cardboard", "Boxes, packaging"]
+                                ].map(([icon, name, description]) => (
+                                    <div
+                                        key={name}
+                                        style={{
+                                            border: "1px solid #d9e7df",
+                                            borderRadius: "12px",
+                                            padding: "14px",
+                                            background: "#f7fbf8"
+                                        }}
+                                    >
+                                        <div style={{ fontSize: "24px" }}>{icon}</div>
+                                        <strong>{name}</strong>
+                                        <div style={{ fontSize: "12px", marginTop: "4px", opacity: 0.75 }}>
+                                            {description}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </section>
 
-    <h3>🚚 {t("bookScrapPickup")}</h3>
+                        <section className="panel">
+                            <h3>♻️ Select Waste Category & Calculate Value</h3>
 
-    <div className="calculator">
+                            <div className="calculator">
+                                <label>Waste Category</label>
+                                <select
+                                    value={selectedScrap}
+                                    onChange={(e) => setSelectedScrap(e.target.value)}
+                                >
+                                    <option value="">Select waste category</option>
+                                    {scrap.map(item => (
+                                        <option key={item._id} value={item._id}>
+                                            {item.name} — ₹{item.rate}/kg
+                                        </option>
+                                    ))}
+                                </select>
 
-        <label>{t("pickupAddress")}</label>
+                                <label>Estimated Weight (kg)</label>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    step="0.1"
+                                    placeholder="Enter weight"
+                                    value={weight}
+                                    onChange={(e) => setWeight(e.target.value)}
+                                />
 
-        <textarea
-            rows="3"
-            placeholder={t("enterCompletePickupAddress")}
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-        />
+                                {selectedMaterial && (
+                                    <div className="calculation">
+                                        <p>
+                                            Rate: <strong>₹{selectedMaterial.rate}/kg</strong>
+                                        </p>
+                                        <p>
+                                            Weight: <strong>{weight || 0} kg</strong>
+                                        </p>
+                                        <p>
+                                            Estimated Value: <strong>₹{estimatedPrice.toFixed(2)}</strong>
+                                        </p>
+                                    </div>
+                                )}
 
-        <label>{t("pickupTimeSlot")}</label>
+                                <button onClick={addPickupItem}>
+                                    ➕ Add Waste Category
+                                </button>
+                            </div>
 
-        <select
-            value={slot}
-            onChange={(e) => setSlot(e.target.value)}
-        >
-            <option value="">
-                {t("selectTimeSlot")}
-            </option>
+                            {pickupItems.length > 0 && (
+                                <div className="calculation" style={{ marginTop: "18px" }}>
+                                    <h3>📋 Segregated Waste</h3>
 
-            <option value="09:00 AM - 11:00 AM">
-                09:00 AM - 11:00 AM
-            </option>
+                                    {pickupItems.map((item, index) => {
+                                        const scrapItem = scrap.find(s => s._id === item.scrap);
+                                        const itemValue =
+                                            Number(item.estimatedWeight || 0) *
+                                            Number(scrapItem?.rate || 0);
 
-            <option value="11:00 AM - 01:00 PM">
-                11:00 AM - 01:00 PM
-            </option>
+                                        return (
+                                            <div
+                                                key={index}
+                                                style={{
+                                                    display: "flex",
+                                                    justifyContent: "space-between",
+                                                    gap: "12px",
+                                                    padding: "10px 0",
+                                                    borderBottom: "1px solid #e5eee9"
+                                                }}
+                                            >
+                                                <strong>♻️ {scrapItem?.name || "Scrap"}</strong>
+                                                <span>{item.estimatedWeight} kg</span>
+                                                <strong>₹{itemValue.toFixed(2)}</strong>
+                                            </div>
+                                        );
+                                    })}
 
-            <option value="02:00 PM - 04:00 PM">
-                02:00 PM - 04:00 PM
-            </option>
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            marginTop: "14px",
+                                            fontWeight: 700
+                                        }}
+                                    >
+                                        <span>Total Waste</span>
+                                        <span>
+                                            {pickupItems
+                                                .reduce(
+                                                    (sum, item) => sum + Number(item.estimatedWeight || 0),
+                                                    0
+                                                )
+                                                .toFixed(1)} kg
+                                        </span>
+                                    </div>
 
-            <option value="04:00 PM - 06:00 PM">
-                04:00 PM - 06:00 PM
-            </option>
-        </select>
+                                    <div
+                                        style={{
+                                            display: "flex",
+                                            justifyContent: "space-between",
+                                            marginTop: "8px",
+                                            fontWeight: 700
+                                        }}
+                                    >
+                                        <span>Estimated Value</span>
+                                        <span>
+                                            ₹
+                                            {pickupItems
+                                                .reduce((sum, item) => {
+                                                    const scrapItem = scrap.find(s => s._id === item.scrap);
+                                                    return (
+                                                        sum +
+                                                        Number(item.estimatedWeight || 0) *
+                                                        Number(scrapItem?.rate || 0)
+                                                    );
+                                                }, 0)
+                                                .toFixed(2)}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+                        </section>
 
-        {locationStatus && (
-            <div
-                className={
-                    locationStatus.startsWith("⚠️")
-                        ? "error-message"
-                        : "success-message"
-                }
-                style={{ marginTop: "10px" }}
-            >
-                {locationStatus}
-            </div>
-        )}
+                        <section className="panel">
+                            <h3>🚚 Book Scrap Pickup</h3>
 
-        {/* Scrap selection + estimated weight */}
-        <div
-            className="calculator"
-            style={{
-                marginTop: "16px",
-                padding: "16px",
-                border: "1px solid #dfe9e2",
-                borderRadius: "12px",
-                background: "#f8fcf9",
-            }}
-        >
-            <h4 style={{ marginTop: 0 }}>
-                ♻️ Select & Add Scrap Material
-            </h4>
+                            <div className="calculator">
+                                <label>{t("pickupAddress")}</label>
+                                <textarea
+                                    rows="3"
+                                    placeholder={t("enterCompletePickupAddress")}
+                                    value={address}
+                                    onChange={(e) => setAddress(e.target.value)}
+                                />
 
-            <label>
-                Scrap Material
-            </label>
+                                <label>{t("pickupTimeSlot")}</label>
+                                <select
+                                    value={slot}
+                                    onChange={(e) => setSlot(e.target.value)}
+                                >
+                                    <option value="">{t("selectTimeSlot")}</option>
+                                    <option value="09:00 AM - 11:00 AM">09:00 AM - 11:00 AM</option>
+                                    <option value="11:00 AM - 01:00 PM">11:00 AM - 01:00 PM</option>
+                                    <option value="02:00 PM - 04:00 PM">02:00 PM - 04:00 PM</option>
+                                    <option value="04:00 PM - 06:00 PM">04:00 PM - 06:00 PM</option>
+                                </select>
 
-            <select
-                value={selectedScrap}
-                onChange={(e) => setSelectedScrap(e.target.value)}
-            >
-                <option value="">
-                    Select scrap material
-                </option>
+                                {locationStatus && (
+                                    <div
+                                        className={
+                                            locationStatus.startsWith("⚠️")
+                                                ? "error-message"
+                                                : "success-message"
+                                        }
+                                        style={{ marginTop: "10px" }}
+                                    >
+                                        {locationStatus}
+                                    </div>
+                                )}
 
-                {scrap.map((item) => (
-                    <option key={item._id} value={item._id}>
-                        {item.name} — ₹{item.rate}/kg
-                    </option>
-                ))}
-            </select>
+                                <button onClick={bookPickup} disabled={!pickupItems.length}>
+                                    🚚 Book Pickup
+                                </button>
 
-            <label style={{ marginTop: "12px" }}>
-                Estimated Weight (kg)
-            </label>
-
-            <input
-                type="number"
-                min="0.1"
-                step="0.1"
-                placeholder="Enter weight"
-                value={weight}
-                onChange={(e) => setWeight(e.target.value)}
-            />
-
-            {selectedMaterial && weight && Number(weight) > 0 && (
-                <div className="calculation" style={{ marginTop: "10px" }}>
-                    <p>
-                        Rate:
-                        <strong style={{ marginLeft: "8px" }}>
-                            ₹{selectedMaterial.rate}/kg
-                        </strong>
-                    </p>
-
-                    <p>
-                        Estimated value:
-                        <strong style={{ marginLeft: "8px" }}>
-                            ₹{(Number(weight) * selectedMaterial.rate).toFixed(2)}
-                        </strong>
-                    </p>
-                </div>
-            )}
-
-            <button
-                type="button"
-                onClick={addPickupItem}
-                disabled={!selectedScrap || !weight || Number(weight) <= 0}
-            >
-                + {t("addScrapItemButton")}
-            </button>
-        </div>
-
-        {pickupItems.length > 0 && (
-            <div className="calculation">
-
-                <h3>{t("pickupItems")}</h3>
-
-                {pickupItems.map((item, index) => {
-
-                    const scrapItem = scrap.find(
-                        s => s._id === item.scrap
-                    );
-
-                    return (
-                        <p key={index}>
-                            <span>
-                                {scrapItem?.name || "Scrap"}
-                            </span>
-
-                            <strong>
-                                {item.estimatedWeight} kg
-                            </strong>
-                        </p>
-                    );
-                })}
-
-            </div>
-        )}
-
-        <button onClick={bookPickup}>
-            🚚 Book Pickup
-        </button>
-
-        {bookingMessage && (
-            <div className="success-message">
-                {bookingMessage}
-            </div>
-        )}
-
-    </div>
-
-</section>
+                                {bookingMessage && (
+                                    <div className="success-message">
+                                        {bookingMessage}
+                                    </div>
+                                )}
+                            </div>
+                        </section>
                     </>
                 )}
 

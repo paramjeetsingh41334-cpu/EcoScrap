@@ -1,153 +1,131 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { api } from "../api.js";
 
 function TransactionHistory() {
     const [transactions, setTransactions] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState("");
 
     useEffect(() => {
-        api("/transactions/mine")
-            .then((data) => {
-                setTransactions(data);
-            })
-            .catch((error) => {
-                console.error(
-                    "Transaction history error:",
-                    error
+        const loadTransactions = async () => {
+            try {
+                // Completed pickups are the source of truth for the user's
+                // digital recycling transactions and receipts.
+                const data = await api("/pickups/mine");
+                const pickups = Array.isArray(data)
+                    ? data
+                    : data?.pickups || [];
+
+                setTransactions(
+                    pickups.filter(
+                        (pickup) => pickup.status === "COMPLETED"
+                    )
                 );
-            })
-            .finally(() => {
+            } catch (err) {
+                console.error("Transaction history error:", err);
+                setError(err.message || "Failed to load transactions");
+            } finally {
                 setLoading(false);
-            });
+            }
+        };
+
+        loadTransactions();
     }, []);
 
     return (
-        <section className="transaction-history-section">
-            {/* HEADER */}
+        <section className="card transaction-panel">
             <div className="transaction-history-header">
-                <div>
-                    <span className="transaction-history-eyebrow">
-                        TRANSACTIONS
-                    </span>
-
-                    <h3>
-                        <span className="transaction-header-icon">
-                            📜
-                        </span>
-
-                        Transaction History
-                    </h3>
-
-                    <p>
-                        View your completed recycling
-                        transactions and receipts.
-                    </p>
-                </div>
-
-                {!loading && transactions.length > 0 && (
-                    <div className="transaction-count">
-                        {transactions.length}{" "}
-                        {transactions.length === 1
-                            ? "Transaction"
-                            : "Transactions"}
-                    </div>
-                )}
+                <span className="section-eyebrow">TRANSACTIONS</span>
+                <h2>🧾 Transaction History</h2>
+                <p>View your completed recycling transactions and digital receipts.</p>
             </div>
 
-            {/* LOADING */}
-            {loading && (
-                <div className="transaction-loading">
-                    <div className="transaction-loading-icon">
-                        📜
-                    </div>
+            {loading && <p>Loading transactions...</p>}
 
-                    <p>Loading transactions...</p>
-                </div>
+            {error && (
+                <p style={{ color: "#b42318", fontWeight: 600 }}>
+                    Failed to load transactions: {error}
+                </p>
             )}
 
-            {/* EMPTY */}
-            {!loading && transactions.length === 0 && (
-                <div className="transaction-empty">
-                    <div className="transaction-empty-icon">
-                        📜
-                    </div>
-
-                    <h4>
-                        No completed transactions yet
-                    </h4>
-
+            {!loading && !error && transactions.length === 0 && (
+                <div className="transaction-empty-state">
+                    <div style={{ fontSize: 42 }}>🧾</div>
+                    <h3>No completed transactions yet</h3>
                     <p>
-                        Your completed recycling transactions
-                        will appear here.
+                        Complete a pickup to create your digital recycling
+                        transaction and receipt.
                     </p>
                 </div>
             )}
 
-            {/* TRANSACTIONS */}
-            {!loading && transactions.length > 0 && (
-                <div className="transaction-history-list">
-                    {transactions.map((transaction) => (
-                        <div
-                            className="transaction-history-card"
-                            key={transaction._id}
+            {!loading && !error && transactions.length > 0 && (
+                <div>
+                    {transactions.map((pickup) => (
+                        <article
+                            className="transaction-card"
+                            key={pickup._id}
                         >
-                            <div className="transaction-main">
-                                <div className="transaction-receipt-icon">
-                                    🧾
-                                </div>
+                            <div>
+                                <small>
+                                    Receipt {pickup.receiptNo || "N/A"}
+                                </small>
+                                <h3>
+                                    ♻️ Recycling Pickup #
+                                    {String(pickup._id).slice(-6)}
+                                </h3>
 
-                                <div className="transaction-info">
+                                <p>
+                                    📍 {pickup.address || "Pickup address"}
+                                </p>
+
+                                <p>
+                                    ⚖️ Final Weight:{" "}
                                     <strong>
-                                        {transaction.receiptNo ||
-                                            "Transaction"}
+                                        {pickup.actualWeight || 0} kg
                                     </strong>
+                                </p>
 
-                                    <small>
-                                        {new Date(
-                                            transaction.createdAt
-                                        ).toLocaleString()}
-                                    </small>
-                                </div>
+                                <p>
+                                    💰 Final Amount:{" "}
+                                    <strong>
+                                        ₹{pickup.finalAmount || 0}
+                                    </strong>
+                                </p>
+
+                                <p>
+                                    💳 Payment:{" "}
+                                    <strong>
+                                        {pickup.paymentStatus || "PENDING"}
+                                    </strong>
+                                </p>
+
+                                <small>
+                                    {pickup.completedAt
+                                        ? new Date(
+                                              pickup.completedAt
+                                          ).toLocaleString()
+                                        : pickup.updatedAt
+                                        ? new Date(
+                                              pickup.updatedAt
+                                          ).toLocaleString()
+                                        : "Completed"}
+                                </small>
                             </div>
 
-                            <div className="transaction-details">
-                                <div className="transaction-detail">
-                                    <span>⚖️</span>
-
-                                    <div>
-                                        <small>
-                                            Weight
-                                        </small>
-
-                                        <strong>
-                                            {transaction.weight ||
-                                                0}{" "}
-                                            kg
-                                        </strong>
-                                    </div>
-                                </div>
-
-                                <div className="transaction-detail">
-                                    <span>💰</span>
-
-                                    <div>
-                                        <small>
-                                            Amount
-                                        </small>
-
-                                        <strong>
-                                            ₹
-                                            {transaction.amount ||
-                                                0}
-                                        </strong>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <span className="transaction-status">
+                            <span
+                                style={{
+                                    padding: "7px 12px",
+                                    borderRadius: "999px",
+                                    background: "#e8f8ef",
+                                    color: "#176b43",
+                                    fontWeight: 700,
+                                    whiteSpace: "nowrap"
+                                }}
+                            >
                                 ✓ COMPLETED
                             </span>
-                        </div>
+                        </article>
                     ))}
                 </div>
             )}

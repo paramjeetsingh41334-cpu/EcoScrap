@@ -14,6 +14,8 @@ import RecyclingCertificates from "../components/RecyclingCertificates.jsx";
 import AdvancedAnalytics from "../components/AdvancedAnalytics.jsx";
 
 function RecyclerDashboard({ user, onLogout }) {
+    const [activeSection, setActiveSection] = useState("dashboard");
+
     const [summary, setSummary] = useState(null);
     const [scrapLots, setScrapLots] = useState([]);
     const [loadingLots, setLoadingLots] = useState(true);
@@ -49,14 +51,62 @@ function RecyclerDashboard({ user, onLogout }) {
                     <b>♻️ {t("appName")}</b>
                     <span className="role">{user.role}</span>
                 </div>
-
-                <button onClick={onLogout}>
-                    {t("logout")}
-                </button>
             </header>
 
             <main>
-                <section className="hero">
+                <div className="recycler-dashboard-layout" style={{ display: "grid", gridTemplateColumns: "240px minmax(0, 1fr)", gap: "24px", alignItems: "start" }}>
+                    <aside className="recycler-sidebar" style={{ position: "sticky", top: "20px", background: "#fff", border: "1px solid #e5ece8", borderRadius: "20px", padding: "18px", boxShadow: "0 10px 30px rgba(20,70,45,0.08)" }}>
+                        <div style={{ marginBottom: "16px" }}>
+                            <small style={{ color: "#6b7c74", fontWeight: 700 }}>RECYCLER PANEL</small>
+                            <h3 style={{ margin: "6px 0 0" }}>♻️ EcoScrap</h3>
+                        </div>
+                        <nav style={{ display: "grid", gap: "7px" }}>
+                            {[
+                                ["dashboard", "🏠", "Dashboard"],
+                                ["scrap-lots", "📦", "Scrap Lots"],
+                                ["auctions", "🔨", "Live Auctions"],
+                                ["marketplace", "🛒", "Marketplace"],
+                                ["purchase-requests", "📥", "Purchase Requests"],
+                                ["traceability", "🔗", "Traceability"],
+                                ["transactions", "💳", "Transactions"],
+                                ["certificates", "🏆", "Certificates"],
+                                ["analytics", "📊", "Analytics"],
+                                ["notifications", "🔔", "Notifications"]
+                            ].map(([key, icon, label]) => (
+                                <button key={key} type="button" onClick={() => setActiveSection(key)}
+                                    style={{ width: "100%", border: "0", borderRadius: "12px", padding: "12px 13px", textAlign: "left", cursor: "pointer", fontWeight: 700, background: activeSection === key ? "#176b43" : "transparent", color: activeSection === key ? "#fff" : "#29443a" }}>
+                                    <span style={{ marginRight: "9px" }}>{icon}</span>{label}
+                                </button>
+                            ))}
+                        </nav>
+                        <div style={{ marginTop: "18px", paddingTop: "15px", borderTop: "1px solid #e8efeb" }}>
+                            <small style={{ color: "#718079" }}>Signed in as</small>
+                            <strong style={{ display: "block", marginTop: "4px" }}>{user.name}</strong>
+
+                            <button
+                                type="button"
+                                onClick={onLogout}
+                                style={{
+                                    width: "100%",
+                                    marginTop: "14px",
+                                    border: "1px solid #dce8e2",
+                                    borderRadius: "12px",
+                                    padding: "11px 13px",
+                                    background: "#fff",
+                                    color: "#b42318",
+                                    cursor: "pointer",
+                                    fontWeight: 700,
+                                    textAlign: "left"
+                                }}
+                            >
+                                🚪 {t("logout")}
+                            </button>
+                        </div>
+                    </aside>
+
+                    <div className="recycler-dashboard-content">
+
+                <section className="hero" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
                     <h2>
                         {t("welcome")}, {user.name}
                     </h2>
@@ -66,7 +116,7 @@ function RecyclerDashboard({ user, onLogout }) {
                     </p>
                 </section>
 
-                <div className="cards">
+                <div className="cards" style={{ display: activeSection === "dashboard" ? "grid" : "none" }}>
                     <div className="card">
                         <small>
                             {t("availableLots")}
@@ -117,7 +167,7 @@ function RecyclerDashboard({ user, onLogout }) {
 
                 {/* Environmental Impact */}
 
-                <section className="panel impact-panel">
+                <section className="panel impact-panel" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
                     <h3>
                         🌍 {t("environmentalImpact")}
                     </h3>
@@ -186,9 +236,9 @@ function RecyclerDashboard({ user, onLogout }) {
                     </p>
                 </section>
 
-                <Notifications />
+                <div style={{ display: activeSection === "notifications" ? "block" : "none" }}><Notifications /></div>
 
-                <section className="panel">
+                <section className="panel" style={{ display: activeSection === "scrap-lots" ? "block" : "none" }}>
                     <h3>
                         📦 {t("availableDigitalLots")}
                     </h3>
@@ -254,25 +304,25 @@ function RecyclerDashboard({ user, onLogout }) {
                     )}
                 </section>
 
-                <LiveAuctions />
+                <div style={{ display: activeSection === "auctions" ? "block" : "none" }}><LiveAuctions /></div>
 
-                <WonAuctions />
+                <div style={{ display: activeSection === "auctions" ? "block" : "none" }}><WonAuctions /></div>
 
-                <RecyclerMarketplace />
+                <div style={{ display: activeSection === "marketplace" ? "block" : "none" }}><RecyclerMarketplace /></div>
 
-                <PurchaseRequests />
+                <div style={{ display: activeSection === "purchase-requests" ? "block" : "none" }}><PurchaseRequests /></div>
 
-                <MyPurchaseRequests />
+                <div style={{ display: activeSection === "purchase-requests" ? "block" : "none" }}><MyPurchaseRequests /></div>
 
-                <WasteTraceability />
+                <div style={{ display: activeSection === "traceability" ? "block" : "none" }}><WasteTraceability /></div>
 
-                <TransactionHistory />
+                <div style={{ display: activeSection === "transactions" ? "block" : "none" }}><TransactionHistory /></div>
 
-                <RecyclingCertificates />
+                <div style={{ display: activeSection === "certificates" ? "block" : "none" }}><RecyclingCertificates /></div>
 
-                <AdvancedAnalytics />
+                <div style={{ display: activeSection === "analytics" ? "block" : "none" }}><AdvancedAnalytics /></div>
 
-                <section className="panel">
+                <section className="panel" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
                     <h3>
                         🚀 {t("recyclerFlow")}
                     </h3>
@@ -287,6 +337,8 @@ function RecyclerDashboard({ user, onLogout }) {
                         {t("traceability")}
                     </div>
                 </section>
+                    </div>
+                </div>
             </main>
         </div>
     );

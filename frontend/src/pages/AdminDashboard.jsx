@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { api } from "../api.js";
 
 function AdminDashboard({ user, onLogout }) {
+    const [activeSection, setActiveSection] = useState("dashboard");
+
     const [recyclers, setRecyclers] = useState([]);
     const [sellers, setSellers] = useState([]);
 
@@ -95,18 +97,94 @@ function AdminDashboard({ user, onLogout }) {
                     </div>
                 </div>
 
-                <button
-                    className="admin-logout-button"
-                    onClick={onLogout}
-                >
-                    Logout
-                </button>
+                <div />
             </header>
 
             <main className="admin-dashboard-container">
+                <div
+                    className="admin-dashboard-layout"
+                    style={{
+                        display: "grid",
+                        gridTemplateColumns: "240px minmax(0, 1fr)",
+                        gap: "24px",
+                        alignItems: "start"
+                    }}
+                >
+                    <aside
+                        className="admin-sidebar"
+                        style={{
+                            position: "sticky",
+                            top: "20px",
+                            background: "#ffffff",
+                            border: "1px solid #e5ece8",
+                            borderRadius: "20px",
+                            padding: "18px",
+                            boxShadow: "0 10px 30px rgba(20,70,45,0.08)"
+                        }}
+                    >
+                        <div style={{ marginBottom: "16px" }}>
+                            <small style={{ color: "#6b7c74", fontWeight: 700 }}>ADMIN PANEL</small>
+                            <h3 style={{ margin: "6px 0 0" }}>♻️ EcoScrap</h3>
+                        </div>
+
+                        <nav style={{ display: "grid", gap: "7px" }}>
+                            {[
+                                ["dashboard", "🏠", "Dashboard"],
+                                ["sellers", "🏪", "Sellers"],
+                                ["recyclers", "♻️", "Recyclers"],
+                                ["verification", "🛡️", "Verification"]
+                            ].map(([key, icon, label]) => (
+                                <button
+                                    key={key}
+                                    type="button"
+                                    onClick={() => setActiveSection(key)}
+                                    style={{
+                                        width: "100%",
+                                        border: "0",
+                                        borderRadius: "12px",
+                                        padding: "12px 13px",
+                                        textAlign: "left",
+                                        cursor: "pointer",
+                                        fontWeight: 700,
+                                        background: activeSection === key ? "#176b43" : "transparent",
+                                        color: activeSection === key ? "#fff" : "#29443a"
+                                    }}
+                                >
+                                    <span style={{ marginRight: "9px" }}>{icon}</span>
+                                    {label}
+                                </button>
+                            ))}
+                        </nav>
+
+                        <div style={{ marginTop: "18px", paddingTop: "15px", borderTop: "1px solid #e8efeb" }}>
+                            <small style={{ color: "#718079" }}>Signed in as</small>
+                            <strong style={{ display: "block", marginTop: "4px" }}>{user.name}</strong>
+
+                            <button
+                                type="button"
+                                onClick={onLogout}
+                                style={{
+                                    width: "100%",
+                                    marginTop: "14px",
+                                    border: "1px solid #dce8e2",
+                                    borderRadius: "12px",
+                                    padding: "11px 13px",
+                                    background: "#fff",
+                                    color: "#b42318",
+                                    cursor: "pointer",
+                                    fontWeight: 700,
+                                    textAlign: "left"
+                                }}
+                            >
+                                🚪 Logout
+                            </button>
+                        </div>
+                    </aside>
+
+                    <div className="admin-dashboard-content">
 
                 {/* HERO */}
-                <section className="admin-hero">
+                <section className="admin-hero" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
                     <div className="admin-hero-content">
                         <span className="admin-eyebrow">
                             ADMIN CONTROL CENTER
@@ -132,7 +210,7 @@ function AdminDashboard({ user, onLogout }) {
                 </section>
 
                 {/* MESSAGE */}
-                {message && (
+                {activeSection === "dashboard" && message && (
                     <div className="admin-message">
                         <span>✓</span>
                         <p>{message}</p>
@@ -140,7 +218,7 @@ function AdminDashboard({ user, onLogout }) {
                 )}
 
                 {/* OVERVIEW */}
-                <div className="admin-overview">
+                <div className="admin-overview" style={{ display: activeSection === "dashboard" ? "grid" : "none" }}>
                     <div className="admin-overview-card">
                         <div className="admin-overview-icon">
                             🏪
@@ -221,7 +299,7 @@ function AdminDashboard({ user, onLogout }) {
                 </div>
 
                 {/* SELLER VERIFICATION */}
-                <section className="admin-verification-section">
+                <section className="admin-verification-section" style={{ display: activeSection === "sellers" || activeSection === "verification" ? "block" : "none" }}>
                     <div className="admin-section-header">
                         <div>
                             <span className="admin-section-eyebrow">
@@ -372,7 +450,7 @@ function AdminDashboard({ user, onLogout }) {
                 </section>
 
                 {/* RECYCLER VERIFICATION */}
-                <section className="admin-verification-section">
+                <section className="admin-verification-section" style={{ display: activeSection === "recyclers" || activeSection === "verification" ? "block" : "none" }}>
                     <div className="admin-section-header">
                         <div>
                             <span className="admin-section-eyebrow">
@@ -516,6 +594,8 @@ function AdminDashboard({ user, onLogout }) {
                             </div>
                         )}
                 </section>
+                    </div>
+                </div>
             </main>
         </div>
     );

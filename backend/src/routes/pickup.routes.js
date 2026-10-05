@@ -6,7 +6,6 @@ import Scrap from "../models/Scrap.js";
 import User from "../models/User.js";
 import Trace from "../models/Trace.js";
 import Notification from "../models/Notification.js";
-import { sendNotification } from "../services/notification.service.js";
 
 import {
     requireAuth,
@@ -27,13 +26,14 @@ r.post(
     async (req, res, next) => {
         try {
             const {
-    items,
-    address,
-    slot,
-    latitude,
-    longitude
-} = req.body;
-            
+                items,
+                address,
+                slot,
+                latitude,
+                longitude,
+                segregation
+            } = req.body;
+
             if (!Array.isArray(items) || !items.length) {
                 return res.status(400).json({
                     message: "At least one scrap item required"
@@ -72,24 +72,40 @@ r.post(
                 estimate +=
                     s.rate * i.estimatedWeight;
             }
-            
-            const p = await Pickup.create({
-    user: req.user._id,
-    items,
-    address,
-    slot,
-    location: {
-        latitude:
-            latitude !== undefined && latitude !== null
-                ? Number(latitude)
-                : null,
 
-        longitude:
-            longitude !== undefined && longitude !== null
-                ? Number(longitude)
-                : null
-    }
-});
+            const p = await Pickup.create({
+                user: req.user._id,
+                items,
+                address,
+                slot,
+                location: {
+                    latitude:
+                        latitude !== undefined &&
+                        latitude !== null
+                            ? Number(latitude)
+                            : null,
+
+                    longitude:
+                        longitude !== undefined &&
+                        longitude !== null
+                            ? Number(longitude)
+                            : null
+                }
+            });
+
+            // Save user's waste segregation information
+            if (
+                Array.isArray(segregation) &&
+                segregation.length
+            ) {
+                p.set(
+                    "segregation",
+                    segregation,
+                    { strict: false }
+                );
+
+                await p.save();
+            }
 
             res.status(201).json({
                 pickup: p,
@@ -197,7 +213,7 @@ r.patch(
                 });
             }
 
-            // 🔔 Notify user
+            // Notify user
             await Notification.create({
                 user: p.user,
                 message:
@@ -259,7 +275,7 @@ r.patch(
 
             await p.save();
 
-            // 🔔 Notify user about status
+            // Notify user
             if (req.body.status === "ON_WAY") {
                 await Notification.create({
                     user: p.user,
@@ -267,16 +283,7 @@ r.patch(
                         "🚚 Your collector is on the way.",
                     type: "PICKUP"
                 });
-
-                await sendNotification({
-    phone: (await User.findById(p.user).select("phone")).phone,
-    
-    message: "🚚 Collector is on the way for your pickup.",
-channels: ["WHATSAPP", "SMS", "IN_APP"]
-});
             }
-
-
 
             if (req.body.status === "ARRIVED") {
                 await Notification.create({
@@ -340,6 +347,18 @@ r.patch(
                 req.body.actualWeight
             );
 
+            // Save collector's segregation
+            // / actual categorized waste
+            if (
+                Array.isArray(req.body.segregation)
+            ) {
+                p.set(
+                    "segregation",
+                    req.body.segregation,
+                    { strict: false }
+                );
+            }
+
             if (
                 !Number.isFinite(weight) ||
                 weight <= 0
@@ -384,7 +403,7 @@ r.patch(
             await p.save();
 
 
-            // 🌱 Green Credits
+            // Green Credits
             const credits =
                 Math.floor(weight * 10);
 
@@ -398,7 +417,7 @@ r.patch(
             );
 
 
-            // ♻️ Traceability
+            // Traceability
             await Trace.create({
                 pickup: p._id,
                 stage: "COLLECTED",
@@ -408,7 +427,7 @@ r.patch(
             });
 
 
-            // 🔔 Notify user
+            // Notify user
             await Notification.create({
                 user: p.user,
                 message:
@@ -429,86 +448,6 @@ r.patch(
 );
 
 
-
-// =====================================================
-// CONFIRM PAYMENT
-// =====================================================
-
-r.patch(
-    "/:id/pay",
-    requireAuth,
-    allowRoles("USER", "ORGANIZATION", "ADMIN"),
-    async (req, res, next) => {
-        try {
-            const p = await Pickup.findById(req.params.id);
-
-            if (!p) {
-                return res.status(404).json({
-                    message: "Pickup not found"
-                });
-            }
-
-            // Only the pickup owner can confirm payment
-            if (
-                req.user.role !== "ADMIN" &&
-                String(p.user) !== String(req.user._id)
-            ) {
-                return res.status(403).json({
-                    message: "Not allowed"
-                });
-            }
-
-            if (p.status !== "COMPLETED") {
-                return res.status(400).json({
-                    message: "Pickup must be completed before payment"
-                });
-            }
-
-            if (p.paymentStatus === "PAID") {
-                return res.status(400).json({
-                    message: "Payment is already marked as paid"
-                });
-            }
-
-            p.paymentStatus = "PAID";
-
-            await p.save();
-
-            await Notification.create({
-                user: p.user,
-                message:
-                    `💰 Payment confirmed for ₹${p.finalAmount}. Receipt: ${p.receiptNo}`,
-                type: "PAYMENT"
-            });
-
-            if (p.collector) {
-                await Notification.create({
-                    user: p.collector,
-                    message:
-                        `💰 Payment received for pickup ${p.receiptNo}. Amount: ₹${p.finalAmount}`,
-                    type: "PAYMENT"
-                });
-            }
-
-            res.json({
-                success: true,
-                message: "Payment marked as paid",
-                pickup: p
-            });
-
-        } catch (e) {
-            next(e);
-        }
-    }
-);
-
-// =====================================================
-// SMART ROUTE OPTIMIZATION
-// =====================================================
-
-// =====================================================
-// SMART ROUTE OPTIMIZATION
-// =====================================================
 // =====================================================
 // SMART ROUTE OPTIMIZATION
 // =====================================================
@@ -519,21 +458,26 @@ r.get(
     allowRoles("COLLECTOR"),
     async (req, res, next) => {
         try {
-            // -------------------------------------------------
-            // 1. GET ACTIVE PICKUPS
-            // -------------------------------------------------
-            // ARRIVED pickups are removed from the recommended
-            // route because the collector has already reached them.
-
             const pickups = await Pickup.find({
                 collector: req.user._id,
                 status: {
-                    $in: ["ACCEPTED", "ON_WAY"]
+                    $in: [
+                        "ACCEPTED",
+                        "ON_WAY",
+                        "ARRIVED"
+                    ]
                 },
-                "location.latitude": { $ne: null },
-                "location.longitude": { $ne: null }
+                "location.latitude": {
+                    $ne: null
+                },
+                "location.longitude": {
+                    $ne: null
+                }
             })
-                .populate("user", "name phone address")
+                .populate(
+                    "user",
+                    "name phone address"
+                )
                 .populate("items.scrap");
 
             if (!pickups.length) {
@@ -545,19 +489,14 @@ r.get(
                     totalStops: 0,
                     totalDistanceKm: 0,
                     estimatedTimeMinutes: 0,
-                    startSource: "none",
-                    routingSource: "none"
+                    startSource: "none"
                 });
             }
-
-            // -------------------------------------------------
-            // 2. HELPERS
-            // -------------------------------------------------
 
             const validNumber = (value) =>
                 Number.isFinite(Number(value));
 
-            const haversineDistanceKm = (
+            const distanceKm = (
                 lat1,
                 lon1,
                 lat2,
@@ -566,98 +505,103 @@ r.get(
                 const R = 6371;
 
                 const dLat =
-                    (lat2 - lat1) * Math.PI / 180;
+                    (lat2 - lat1) *
+                    Math.PI /
+                    180;
 
                 const dLon =
-                    (lon2 - lon1) * Math.PI / 180;
+                    (lon2 - lon1) *
+                    Math.PI /
+                    180;
 
                 const a =
                     Math.sin(dLat / 2) ** 2 +
-                    Math.cos(lat1 * Math.PI / 180) *
-                    Math.cos(lat2 * Math.PI / 180) *
+                    Math.cos(
+                        lat1 *
+                        Math.PI /
+                        180
+                    ) *
+                    Math.cos(
+                        lat2 *
+                        Math.PI /
+                        180
+                    ) *
                     Math.sin(dLon / 2) ** 2;
 
                 return (
                     2 *
                     R *
-                    Math.asin(Math.sqrt(a))
+                    Math.asin(
+                        Math.sqrt(a)
+                    )
                 );
             };
 
-            const parseTime = (value) => {
-                if (!value) return null;
+            const parseSlotStart = (slot) => {
+                if (!slot) return 1440;
 
-                const match = String(value).match(
-                    /(\d{1,2}):(\d{2})\s*(AM|PM)/i
-                );
+                const match =
+                    String(slot).match(
+                        /(\d{1,2}):(\d{2})\s*(AM|PM)/i
+                    );
 
-                if (!match) return null;
+                if (!match) return 1440;
 
-                let hour = Number(match[1]);
-                const minute = Number(match[2]);
-                const period = match[3].toUpperCase();
+                let hour =
+                    Number(match[1]);
 
-                if (period === "AM" && hour === 12) {
+                const minute =
+                    Number(match[2]);
+
+                const period =
+                    match[3].toUpperCase();
+
+                if (
+                    period === "AM" &&
+                    hour === 12
+                ) {
                     hour = 0;
                 }
 
-                if (period === "PM" && hour !== 12) {
+                if (
+                    period === "PM" &&
+                    hour !== 12
+                ) {
                     hour += 12;
                 }
 
-                return hour * 60 + minute;
-            };
-
-            const parseSlot = (slot) => {
-                if (!slot) {
-                    return {
-                        start: null,
-                        end: null
-                    };
-                }
-
-                const matches = String(slot).match(
-                    /(\d{1,2}):(\d{2})\s*(AM|PM)\s*[-–]\s*(\d{1,2}):(\d{2})\s*(AM|PM)/i
+                return (
+                    hour * 60 +
+                    minute
                 );
-
-                if (!matches) {
-                    return {
-                        start: parseTime(slot),
-                        end: null
-                    };
-                }
-
-                return {
-                    start: parseTime(
-                        `${matches[1]}:${matches[2]} ${matches[3]}`
-                    ),
-                    end: parseTime(
-                        `${matches[4]}:${matches[5]} ${matches[6]}`
-                    )
-                };
             };
 
-            // -------------------------------------------------
-            // 3. COLLECTOR CURRENT LOCATION
-            // -------------------------------------------------
+            const clientMinutes =
+                validNumber(
+                    req.query.clientMinutes
+                )
+                    ? Number(
+                        req.query.clientMinutes
+                    )
+                    : null;
 
             const requestedLat =
-                validNumber(req.query.latitude)
-                    ? Number(req.query.latitude)
+                validNumber(
+                    req.query.latitude
+                )
+                    ? Number(
+                        req.query.latitude
+                    )
                     : null;
 
             const requestedLng =
-                validNumber(req.query.longitude)
-                    ? Number(req.query.longitude)
+                validNumber(
+                    req.query.longitude
+                )
+                    ? Number(
+                        req.query.longitude
+                    )
                     : null;
-
-            const clientMinutes =
-                validNumber(req.query.clientMinutes)
-                    ? Number(req.query.clientMinutes)
-                    : (
-                        new Date().getHours() * 60 +
-                        new Date().getMinutes()
-                    );
 
             let currentLat;
             let currentLng;
@@ -671,317 +615,157 @@ r.get(
                 requestedLng >= -180 &&
                 requestedLng <= 180
             ) {
-                currentLat = requestedLat;
-                currentLng = requestedLng;
-                startSource = "collector-location";
-            } else {
                 currentLat =
-                    Number(pickups[0].location.latitude);
+                    requestedLat;
 
                 currentLng =
-                    Number(pickups[0].location.longitude);
+                    requestedLng;
+
+                startSource =
+                    "collector-location";
+
+            } else {
+                currentLat =
+                    Number(
+                        pickups[0]
+                            .location
+                            .latitude
+                    );
+
+                currentLng =
+                    Number(
+                        pickups[0]
+                            .location
+                            .longitude
+                    );
 
                 startSource =
                     "first-pickup-fallback";
             }
 
-            // -------------------------------------------------
-            // 4. PREPARE COORDINATES
-            // -------------------------------------------------
-
-            const coordinates = [
-                {
-                    latitude: currentLat,
-                    longitude: currentLng
-                },
-                ...pickups.map((pickup) => ({
-                    latitude:
-                        Number(pickup.location.latitude),
-                    longitude:
-                        Number(pickup.location.longitude)
-                }))
-            ];
-
-            // -------------------------------------------------
-            // 5. GET ROAD DISTANCE + ROAD TIME FROM OSRM
-            // -------------------------------------------------
-            //
-            // OSRM Table API returns a matrix containing
-            // road-network distance in meters and duration
-            // in seconds between all supplied coordinates.
-            //
-            // Coordinate format:
-            // longitude,latitude
-            //
-            // If OSRM is unavailable, we fall back to
-            // Haversine distance so the feature does not break.
-
-            let routingSource = "OSRM road routing";
-            let distanceMatrix = null;
-            let durationMatrix = null;
-
-            try {
-                const coordinateString =
-                    coordinates
-                        .map(
-                            (point) =>
-                                `${point.longitude},${point.latitude}`
-                        )
-                        .join(";");
-
-                const osrmUrl =
-                    `https://router.project-osrm.org/table/v1/driving/${coordinateString}` +
-                    `?annotations=duration,distance`;
-
-                const response =
-                    await fetch(osrmUrl, {
-                        headers: {
-                            Accept: "application/json"
-                        }
-                    });
-
-                if (!response.ok) {
-                    throw new Error(
-                        `OSRM HTTP ${response.status}`
-                    );
-                }
-
-                const data = await response.json();
-
-                if (
-                    data.code !== "Ok" ||
-                    !Array.isArray(data.distances) ||
-                    !Array.isArray(data.durations)
-                ) {
-                    throw new Error(
-                        "Invalid OSRM routing response"
-                    );
-                }
-
-                distanceMatrix = data.distances;
-                durationMatrix = data.durations;
-            } catch (routingError) {
-                console.warn(
-                    "OSRM unavailable, using fallback distance:",
-                    routingError.message
-                );
-
-                routingSource =
-                    "Haversine fallback";
-
-                distanceMatrix = coordinates.map(
-                    (from) =>
-                        coordinates.map(
-                            (to) =>
-                                haversineDistanceKm(
-                                    from.latitude,
-                                    from.longitude,
-                                    to.latitude,
-                                    to.longitude
-                                ) * 1000
-                        )
-                );
-
-                // Fallback average urban speed.
-                durationMatrix = distanceMatrix.map(
-                    (row) =>
-                        row.map(
-                            (meters) =>
-                                (meters / 22000) * 3600
-                        )
-                );
-            }
-
-            // -------------------------------------------------
-            // 6. PREPARE PICKUPS WITH TIME SLOTS
-            // -------------------------------------------------
-
-            const remaining = pickups.map(
-                (pickup, index) => {
-                    const slot = parseSlot(
-                        pickup.slot
-                    );
-
-                    return {
+            const remaining =
+                pickups.map(
+                    (pickup) => ({
                         pickup,
-                        matrixIndex: index + 1,
-                        slotStart: slot.start,
-                        slotEnd: slot.end
-                    };
-                }
-            );
-
-            // -------------------------------------------------
-            // 7. SMART ROUTE OPTIMIZATION
-            // -------------------------------------------------
-            //
-            // Factors:
-            //   - REAL ROAD travel time
-            //   - REAL ROAD distance
-            //   - pickup time slot
-            //   - current time
-            //   - previous pickup
-            //
-            // We use a greedy selection algorithm because it
-            // is lightweight and suitable for a live dashboard.
+                        slotStart:
+                            parseSlotStart(
+                                pickup.slot
+                            )
+                    })
+                );
 
             const route = [];
 
-            let currentMatrixIndex = 0;
-            let totalDistanceMeters = 0;
-            let totalDrivingSeconds = 0;
-            let currentTimeMinutes = clientMinutes;
+            let totalDistance = 0;
 
-            while (remaining.length > 0) {
+            let previousSlotStart =
+                null;
+
+            while (
+                remaining.length > 0
+            ) {
                 let bestIndex = 0;
-                let bestScore = Infinity;
-                let bestDistanceMeters = Infinity;
-                let bestDurationSeconds = Infinity;
+
+                let bestScore =
+                    Infinity;
+
+                let bestDistance =
+                    Infinity;
 
                 remaining.forEach(
-                    (candidate, index) => {
-                        const matrixIndex =
-                            candidate.matrixIndex;
+                    (
+                        candidate,
+                        index
+                    ) => {
+                        const pickup =
+                            candidate.pickup;
 
-                        let distanceMeters =
-                            distanceMatrix?.[
-                                currentMatrixIndex
-                            ]?.[matrixIndex];
+                        const lat =
+                            Number(
+                                pickup
+                                    .location
+                                    .latitude
+                            );
 
-                        let durationSeconds =
-                            durationMatrix?.[
-                                currentMatrixIndex
-                            ]?.[matrixIndex];
+                        const lng =
+                            Number(
+                                pickup
+                                    .location
+                                    .longitude
+                            );
 
-                        // If a matrix cell is unavailable,
-                        // use straight-line fallback.
-                        if (
-                            !validNumber(distanceMeters)
-                        ) {
-                            distanceMeters =
-                                haversineDistanceKm(
-                                    coordinates[
-                                        currentMatrixIndex
-                                    ].latitude,
-                                    coordinates[
-                                        currentMatrixIndex
-                                    ].longitude,
-                                    coordinates[
-                                        matrixIndex
-                                    ].latitude,
-                                    coordinates[
-                                        matrixIndex
-                                    ].longitude
-                                ) * 1000;
-                        }
+                        const distance =
+                            distanceKm(
+                                currentLat,
+                                currentLng,
+                                lat,
+                                lng
+                            );
+
+                        let urgency = 0;
+
+                        const slotStart =
+                            candidate.slotStart;
 
                         if (
-                            !validNumber(durationSeconds)
+                            clientMinutes !==
+                            null
                         ) {
-                            durationSeconds =
-                                (distanceMeters / 22000) *
-                                3600;
-                        }
+                            const
+                                minutesUntilSlot =
+                                    slotStart -
+                                    clientMinutes;
 
-                        const travelMinutes =
-                            durationSeconds / 60;
-
-                        const arrivalTime =
-                            currentTimeMinutes +
-                            travelMinutes;
-
-                        let score =
-                            travelMinutes;
-
-                        // -----------------------------------------
-                        // TIME-SLOT INTELLIGENCE
-                        // -----------------------------------------
-
-                        if (
-                            candidate.slotStart !== null
-                        ) {
-                            const start =
-                                candidate.slotStart;
-
-                            const end =
-                                candidate.slotEnd;
-
-                            // Pickup slot has already expired.
                             if (
-                                end !== null &&
-                                currentTimeMinutes > end
+                                minutesUntilSlot <=
+                                30
                             ) {
-                                // Still allow it, but strongly
-                                // prioritize it because it is late.
-                                score -= 40;
-                            }
-
-                            // We can comfortably arrive before
-                            // the slot starts.
-                            else if (
-                                arrivalTime < start
+                                urgency = -4;
+                            } else if (
+                                minutesUntilSlot <=
+                                90
                             ) {
-                                const waitingMinutes =
-                                    start -
-                                    arrivalTime;
-
-                                // Prefer pickups whose slot is
-                                // approaching, without ignoring
-                                // distance.
-                                if (
-                                    waitingMinutes <= 30
-                                ) {
-                                    score -= 15;
-                                } else if (
-                                    waitingMinutes <= 90
-                                ) {
-                                    score -= 7;
-                                }
-                            }
-
-                            // We arrive after the slot ends.
-                            if (
-                                end !== null &&
-                                arrivalTime > end
-                            ) {
-                                const lateMinutes =
-                                    arrivalTime - end;
-
-                                score +=
-                                    Math.min(
-                                        60,
-                                        lateMinutes * 3
-                                    );
-                            }
-
-                            // We arrive during the valid window.
-                            if (
-                                end !== null &&
-                                arrivalTime >= start &&
-                                arrivalTime <= end
-                            ) {
-                                score -= 20;
+                                urgency = -2;
                             }
                         }
 
-                        // Small distance tie-breaker.
-                        score +=
-                            distanceMeters / 10000;
+                        let slotPenalty = 0;
 
                         if (
-                            score < bestScore ||
+                            previousSlotStart !==
+                                null &&
+                            slotStart <
+                                previousSlotStart
+                        ) {
+                            slotPenalty =
+                                1.5;
+                        }
+
+                        const score =
+                            distance +
+                            slotPenalty +
+                            urgency;
+
+                        if (
+                            score <
+                                bestScore ||
                             (
-                                score === bestScore &&
-                                distanceMeters <
-                                    bestDistanceMeters
+                                score ===
+                                    bestScore &&
+                                slotStart <
+                                    remaining[
+                                        bestIndex
+                                    ].slotStart
                             )
                         ) {
-                            bestScore = score;
-                            bestIndex = index;
-                            bestDistanceMeters =
-                                distanceMeters;
-                            bestDurationSeconds =
-                                durationSeconds;
+                            bestScore =
+                                score;
+
+                            bestIndex =
+                                index;
+
+                            bestDistance =
+                                distance;
                         }
                     }
                 );
@@ -995,14 +779,8 @@ r.get(
                 const pickup =
                     next.pickup;
 
-                totalDistanceMeters +=
-                    bestDistanceMeters;
-
-                totalDrivingSeconds +=
-                    bestDurationSeconds;
-
-                currentTimeMinutes +=
-                    bestDurationSeconds / 60;
+                totalDistance +=
+                    bestDistance;
 
                 route.push({
                     order:
@@ -1030,101 +808,101 @@ r.get(
 
                     latitude:
                         Number(
-                            pickup.location.latitude
+                            pickup
+                                .location
+                                .latitude
                         ),
 
                     longitude:
                         Number(
-                            pickup.location.longitude
+                            pickup
+                                .location
+                                .longitude
                         ),
 
                     distanceFromPreviousKm:
                         Math.round(
-                            (bestDistanceMeters / 1000) *
+                            bestDistance *
                             100
                         ) / 100,
-
-                    travelTimeFromPreviousMinutes:
-                        Math.max(
-                            1,
-                            Math.round(
-                                bestDurationSeconds / 60
-                            )
-                        ),
 
                     items:
                         pickup.items.map(
                             (item) => ({
                                 scrap:
-                                    item.scrap
+                                    item
+                                        .scrap
                                         ?.name ||
                                     "Scrap",
 
                                 estimatedWeight:
-                                    item.estimatedWeight
+                                    item
+                                        .estimatedWeight
                             })
                         )
                 });
 
-                currentMatrixIndex =
-                    next.matrixIndex;
+                currentLat =
+                    Number(
+                        pickup
+                            .location
+                            .latitude
+                    );
+
+                currentLng =
+                    Number(
+                        pickup
+                            .location
+                            .longitude
+                    );
+
+                previousSlotStart =
+                    next.slotStart;
             }
 
-            // -------------------------------------------------
-            // 8. FINAL TOTALS
-            // -------------------------------------------------
-
-            const totalDistanceKm =
+            totalDistance =
                 Math.round(
-                    (totalDistanceMeters / 1000) *
+                    totalDistance *
                     100
                 ) / 100;
 
+            // Planning estimate only:
+            // urban average speed + 5 minutes per stop.
             const drivingMinutes =
-                Math.round(
-                    totalDrivingSeconds / 60
-                );
+                (
+                    totalDistance /
+                    22
+                ) * 60;
 
-            // Keep 5 minutes handling time per pickup.
             const handlingMinutes =
                 route.length * 5;
 
             const estimatedTimeMinutes =
                 Math.max(
                     1,
-                    drivingMinutes +
-                    handlingMinutes
+                    Math.round(
+                        drivingMinutes +
+                        handlingMinutes
+                    )
                 );
-
-            // -------------------------------------------------
-            // 9. RESPONSE
-            // -------------------------------------------------
 
             res.json({
                 success: true,
-
                 route,
-
                 totalStops:
                     route.length,
 
-                totalDistanceKm,
+                totalDistanceKm:
+                    totalDistance,
 
                 estimatedTimeMinutes,
 
-                drivingTimeMinutes:
-                    drivingMinutes,
-
-                handlingTimeMinutes:
-                    handlingMinutes,
-
                 startSource,
 
-                routingSource,
-
                 optimization:
-                    "Road distance + road time + pickup time-slot awareness"
+                    "Distance + pickup time-slot awareness"
             });
+
         } catch (error) {
             console.error(
                 "Smart route error:",
@@ -1135,4 +913,67 @@ r.get(
         }
     }
 );
+// =====================================================
+// CONFIRM PAYMENT
+// =====================================================
+
+r.patch(
+    "/:id/pay",
+    requireAuth,
+    allowRoles("USER", "ORGANIZATION", "ADMIN"),
+    async (req, res, next) => {
+        try {
+            const p = await Pickup.findById(req.params.id);
+
+            if (!p) {
+                return res.status(404).json({
+                    message: "Pickup not found"
+                });
+            }
+
+            if (
+                req.user.role !== "ADMIN" &&
+                String(p.user) !== String(req.user._id)
+            ) {
+                return res.status(403).json({
+                    message: "Not allowed"
+                });
+            }
+
+            if (p.status !== "COMPLETED") {
+                return res.status(400).json({
+                    message:
+                        "Pickup must be completed before payment"
+                });
+            }
+
+            if (p.paymentStatus === "PAID") {
+                return res.status(400).json({
+                    message:
+                        "Payment is already marked as paid"
+                });
+            }
+
+            p.paymentStatus = "PAID";
+
+            await p.save();
+
+            await Notification.create({
+                user: p.user,
+                message:
+                    `💰 Payment confirmed for ₹${p.finalAmount}.`,
+                type: "PAYMENT"
+            });
+
+            res.json({
+                success: true,
+                pickup: p
+            });
+
+        } catch (e) {
+            next(e);
+        }
+    }
+);
+
 export default r;
