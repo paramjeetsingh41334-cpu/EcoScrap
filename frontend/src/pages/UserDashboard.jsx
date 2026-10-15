@@ -456,8 +456,12 @@ const openReceipt = (pickup) => {
     <div style={{
         marginTop: "10px",
         display: "flex",
-        flexWrap: "wrap",
+        flexWrap: "nowrap",
         gap: "8px",
+        overflowX: "auto",
+        overflowY: "hidden",
+        whiteSpace: "nowrap",
+        paddingBottom: "6px",
         alignItems: "center",
         fontSize: "13px"
     }}>
@@ -544,6 +548,75 @@ const openReceipt = (pickup) => {
                     </div>
 
                 </div>
+
+
+                {/* Quick Actions */}
+<section className="panel quick-actions-panel">
+    <h3>⚡ Quick Actions</h3>
+    <p>Access your most-used EcoNexus features quickly.</p>
+
+    <div className="quick-actions-grid">
+        <button
+            type="button"
+            className="quick-action-button"
+            onClick={() => setActivePage("pickup")}
+        >
+            <span>🚚</span>
+            <strong>Book Pickup</strong>
+            <small>Schedule a waste collection</small>
+        </button>
+
+        <button
+            type="button"
+            className="quick-action-button"
+            onClick={() => setActivePage("my-pickups")}
+        >
+            <span>📦</span>
+            <strong>My Pickups</strong>
+            <small>Track your pickup requests</small>
+        </button>
+
+        <button
+            type="button"
+            className="quick-action-button"
+            onClick={() => setActivePage("marketplace")}
+        >
+            <span>🏪</span>
+            <strong>Marketplace</strong>
+            <small>Explore scrap listings</small>
+        </button>
+
+        <button
+            type="button"
+            className="quick-action-button"
+            onClick={() => setActivePage("transactions")}
+        >
+            <span>💰</span>
+            <strong>Transactions</strong>
+            <small>View payments and history</small>
+        </button>
+
+        <button
+            type="button"
+            className="quick-action-button"
+            onClick={() => setActivePage("traceability")}
+        >
+            <span>🔗</span>
+            <strong>Traceability</strong>
+            <small>Follow the waste journey</small>
+        </button>
+
+        <button
+            type="button"
+            className="quick-action-button"
+            onClick={() => setActivePage("notifications")}
+        >
+            <span>🔔</span>
+            <strong>Notifications</strong>
+            <small>Check recent updates</small>
+        </button>
+    </div>
+</section>
 {/* Environmental Impact */}
 
 <section className="panel impact-panel">
@@ -1298,6 +1371,58 @@ const openReceipt = (pickup) => {
                 )}
 
             </main>
+
+                {/* Mobile app-style bottom navigation */}
+                <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
+                    <button
+                        type="button"
+                        className={`mobile-bottom-nav-item ${activePage === "dashboard" ? "active" : ""}`}
+                        aria-current={activePage === "dashboard" ? "page" : undefined}
+                        onClick={() => setActivePage("dashboard")}
+                    >
+                        <span className="mobile-bottom-nav-icon" aria-hidden="true">⌂</span>
+                        <span>Home</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        className={`mobile-bottom-nav-item ${activePage === "my-pickups" ? "active" : ""}`}
+                        aria-current={activePage === "my-pickups" ? "page" : undefined}
+                        onClick={() => setActivePage("my-pickups")}
+                    >
+                        <span className="mobile-bottom-nav-icon" aria-hidden="true">🚚</span>
+                        <span>Pickups</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        className="mobile-bottom-nav-item mobile-book-button"
+                        aria-label="Book a pickup"
+                        onClick={() => setActivePage("pickup")}
+                    >
+                        <span className="mobile-bottom-nav-icon" aria-hidden="true">＋</span>
+                        <span>Book</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        className={`mobile-bottom-nav-item ${activePage === "marketplace" ? "active" : ""}`}
+                        aria-current={activePage === "marketplace" ? "page" : undefined}
+                        onClick={() => setActivePage("marketplace")}
+                    >
+                        <span className="mobile-bottom-nav-icon" aria-hidden="true">🏪</span>
+                        <span>Market</span>
+                    </button>
+
+                    <button
+                        type="button"
+                        className="mobile-bottom-nav-item"
+                        onClick={() => document.querySelector(".dashboard-menu-button")?.click()}
+                    >
+                        <span className="mobile-bottom-nav-icon" aria-hidden="true">👤</span>
+                        <span>Menu</span>
+                    </button>
+                </nav>
 
             </div>
         </DashboardLayout>

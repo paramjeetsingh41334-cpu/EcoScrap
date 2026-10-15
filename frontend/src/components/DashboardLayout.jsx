@@ -1,46 +1,14 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 const navigation = [
-  {
-    id: "dashboard",
-    label: "Dashboard",
-    icon: "📊",
-  },
-  {
-    id: "pickup",
-    label: "Book Pickup",
-    icon: "🚚",
-  },
-  {
-    id: "my-pickups",
-    label: "My Pickups",
-    icon: "📦",
-  },
-  {
-    id: "marketplace",
-    label: "Marketplace",
-    icon: "🏪",
-  },
-  {
-    id: "traceability",
-    label: "Traceability",
-    icon: "🔗",
-  },
-  {
-    id: "transactions",
-    label: "Transactions",
-    icon: "💰",
-  },
-  {
-    id: "notifications",
-    label: "Notifications",
-    icon: "🔔",
-  },
-  {
-    id: "analytics",
-    label: "Analytics",
-    icon: "📈",
-  },
+  { id: "dashboard", label: "Dashboard", icon: "📊" },
+  { id: "pickup", label: "Book Pickup", icon: "🚚" },
+  { id: "my-pickups", label: "My Pickups", icon: "📦" },
+  { id: "marketplace", label: "Marketplace", icon: "🏪" },
+  { id: "traceability", label: "Traceability", icon: "🔗" },
+  { id: "transactions", label: "Transactions", icon: "💰" },
+  { id: "notifications", label: "Notifications", icon: "🔔" },
+  { id: "analytics", label: "Analytics", icon: "📈" },
 ];
 
 function getRoleName(role) {
@@ -82,26 +50,47 @@ export default function DashboardLayout({
   children,
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const [searchOpen, setSearchOpen] = useState(false);
+
+  const filteredPages = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    if (!query) return [];
+
+    return navigation.filter((item) =>
+      `${item.label} ${item.id} ${item.icon}`
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [search]);
 
   const handleNavigation = (page) => {
-    if (onNavigate) {
-      onNavigate(page);
-    }
-
+    onNavigate?.(page);
     setSidebarOpen(false);
+    setSearch("");
+    setSearchOpen(false);
   };
 
   const handleLogout = () => {
     setSidebarOpen(false);
+    onLogout?.();
+  };
 
-    if (onLogout) {
-      onLogout();
+  const handleSearchSubmit = (event) => {
+    event.preventDefault();
+
+    if (filteredPages.length > 0) {
+      handleNavigation(filteredPages[0].id);
     }
   };
 
+  const currentPage =
+    navigation.find((item) => item.id === activePage)?.label ||
+    "Dashboard";
+
   return (
     <div className="dashboard-layout">
-      {/* Mobile overlay */}
       {sidebarOpen && (
         <div
           className="dashboard-sidebar-overlay"
@@ -109,7 +98,6 @@ export default function DashboardLayout({
         />
       )}
 
-      {/* Sidebar */}
       <aside
         className={`dashboard-sidebar ${
           sidebarOpen ? "dashboard-sidebar-open" : ""
@@ -120,24 +108,25 @@ export default function DashboardLayout({
             <div className="dashboard-brand-icon">♻️</div>
 
             <div>
-              <div className="dashboard-brand-name">EcoScrap</div>
+              <div className="dashboard-brand-name">EcoNexus</div>
               <div className="dashboard-brand-subtitle">
                 Smart Waste Management
               </div>
             </div>
           </div>
 
-          <button
-            type="button"
-            className="dashboard-sidebar-close"
-            onClick={() => setSidebarOpen(false)}
-            aria-label="Close menu"
-          >
-            ✕
-          </button>
+        <button
+          type="button"
+          className="dashboard-sidebar-close"
+          onClick={() => {
+              setSidebarOpen(false);
+           }}
+           aria-label="Close menu"
+           >
+           ✕
+           </button>
         </div>
 
-        {/* User profile */}
         <div className="dashboard-user-card">
           <div className="dashboard-user-avatar">
             {getInitials(user)}
@@ -145,14 +134,16 @@ export default function DashboardLayout({
 
           <div className="dashboard-user-info">
             <strong>
-              {user?.name || user?.fullName || user?.username || "EcoScrap User"}
+              {user?.name ||
+                user?.fullName ||
+                user?.username ||
+                "EcoNexus User"}
             </strong>
 
             <span>{getRoleName(user?.role)}</span>
           </div>
         </div>
 
-        {/* Navigation */}
         <nav className="dashboard-navigation">
           <div className="dashboard-navigation-title">
             MAIN MENU
@@ -169,7 +160,9 @@ export default function DashboardLayout({
               }`}
               onClick={() => handleNavigation(item.id)}
             >
-              <span className="dashboard-nav-icon">{item.icon}</span>
+              <span className="dashboard-nav-icon">
+                {item.icon}
+              </span>
 
               <span className="dashboard-nav-label">
                 {item.label}
@@ -178,7 +171,6 @@ export default function DashboardLayout({
           ))}
         </nav>
 
-        {/* Sidebar bottom */}
         <div className="dashboard-sidebar-bottom">
           <button
             type="button"
@@ -191,46 +183,102 @@ export default function DashboardLayout({
         </div>
       </aside>
 
-      {/* Main area */}
       <div className="dashboard-main">
-        {/* Top bar */}
-        <header className="dashboard-topbar">
-          <div className="dashboard-topbar-left">
-            <button
-              type="button"
-              className="dashboard-menu-button"
-              onClick={() => setSidebarOpen(true)}
-              aria-label="Open menu"
-            >
-              ☰
-            </button>
+       <header className="dashboard-topbar">
+  <div className="dashboard-topbar-left">
+    <button
+      type="button"
+      className="dashboard-menu-button"
+      onClick={() => setSidebarOpen(true)}
+      aria-label="Open menu"
+    >
+      ☰
+    </button>
 
-            <div>
-              <h1>
-                {navigation.find(
-                  (item) => item.id === activePage
-                )?.label || "Dashboard"}
-              </h1>
+    <div className="dashboard-page-heading">
+      <h1>{currentPage}</h1>
+      <p>Manage your EcoNexus activities</p>
+    </div>
+  </div>
 
-              <p>
-                Manage your EcoScrap activities
-              </p>
+  <div className="dashboard-topbar-right">
+    <form
+      className="dashboard-search"
+      role="search"
+      onSubmit={handleSearchSubmit}
+    >
+      <span aria-hidden="true">🔍</span>
+
+      <input
+        type="search"
+        value={search}
+        placeholder="Search features..."
+        aria-label="Search dashboard features"
+        aria-expanded={searchOpen && search.trim().length > 0}
+        onFocus={() => setSearchOpen(true)}
+        onChange={(event) => {
+          setSearch(event.target.value);
+          setSearchOpen(true);
+        }}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") {
+            setSearchOpen(false);
+          }
+        }}
+      />
+
+      {search && (
+        <button
+          type="button"
+          className="dashboard-search-clear"
+          aria-label="Clear search"
+          onClick={() => {
+            setSearch("");
+            setSearchOpen(false);
+          }}
+        >
+          ✕
+        </button>
+      )}
+
+      {searchOpen && search.trim() && (
+        <div className="dashboard-search-results">
+          {filteredPages.length > 0 ? (
+            filteredPages.map((item) => (
+              <button
+                key={item.id}
+                type="button"
+                className="dashboard-search-result"
+                onClick={() => handleNavigation(item.id)}
+              >
+                <span>{item.icon}</span>
+                <span>{item.label}</span>
+                <span aria-hidden="true">→</span>
+              </button>
+            ))
+          ) : (
+            <div className="dashboard-search-empty">
+              No matching features found.
             </div>
-          </div>
+          )}
+        </div>
+      )}
+    </form>
 
-          <div className="dashboard-topbar-right">
-            <div className="dashboard-role-badge">
-              {getRoleName(user?.role)}
-            </div>
+    <div className="dashboard-role-badge">
+      {getRoleName(user?.role)}
+    </div>
 
-            <div className="dashboard-topbar-avatar">
-              {getInitials(user)}
-            </div>
-          </div>
-        </header>
+    <div className="dashboard-topbar-avatar">
+      {getInitials(user)}
+    </div>
+  </div>
+</header>
 
-        {/* Page content */}
-        <main className="dashboard-content">
+        <main
+          className="dashboard-content"
+          onClick={() => setSearchOpen(false)}
+        >
           {children}
         </main>
       </div>
