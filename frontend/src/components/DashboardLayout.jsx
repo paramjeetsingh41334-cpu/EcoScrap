@@ -1,15 +1,51 @@
 import { useMemo, useState } from "react";
 
-const navigation = [
-  { id: "dashboard", label: "Dashboard", icon: "📊" },
-  { id: "pickup", label: "Book Pickup", icon: "🚚" },
-  { id: "my-pickups", label: "My Pickups", icon: "📦" },
-  { id: "marketplace", label: "Marketplace", icon: "🏪" },
-  { id: "traceability", label: "Traceability", icon: "🔗" },
-  { id: "transactions", label: "Transactions", icon: "💰" },
-  { id: "notifications", label: "Notifications", icon: "🔔" },
-  { id: "analytics", label: "Analytics", icon: "📈" },
-];
+const navigationByRole = {
+  USER: [
+    { id: "dashboard", label: "Dashboard", icon: "📊" },
+    { id: "pickup", label: "Book Pickup", icon: "🚚" },
+    { id: "my-pickups", label: "My Pickups", icon: "📦" },
+    { id: "marketplace", label: "Marketplace", icon: "🏪" },
+    { id: "traceability", label: "Traceability", icon: "🔗" },
+    { id: "transactions", label: "Transactions", icon: "💰" },
+    { id: "notifications", label: "Notifications", icon: "🔔" },
+    { id: "analytics", label: "Analytics", icon: "📈" },
+  ],
+
+  COLLECTOR: [
+    { id: "dashboard", label: "Dashboard", icon: "📊" },
+    { id: "notifications", label: "Notifications", icon: "🔔" },
+    { id: "pickup-requests", label: "Pickup Requests", icon: "🚚" },
+    { id: "my-pickups", label: "My Pickups", icon: "📦" },
+    { id: "scrap-lots", label: "My Scrap Lots", icon: "♻️" },
+    { id: "smart-route", label: "Smart Route", icon: "🗺️" },
+    { id: "marketplace", label: "Marketplace & Auctions", icon: "🏪" },
+    { id: "traceability", label: "Traceability", icon: "🔗" },
+    { id: "transactions", label: "Transactions", icon: "💰" },
+    { id: "analytics", label: "Analytics & Certificates", icon: "📈" },
+    { id: "pricing", label: "Pricing Calculator", icon: "🧮" },
+  ],
+
+  RECYCLER: [
+    { id: "dashboard", label: "Dashboard", icon: "📊" },
+    { id: "scrap-lots", label: "Available Scrap Lots", icon: "♻️" },
+    { id: "auctions", label: "Live Auctions", icon: "🔨" },
+    { id: "marketplace", label: "Marketplace", icon: "🏪" },
+    { id: "purchase-requests", label: "Purchase Requests", icon: "📋" },
+    { id: "traceability", label: "Traceability", icon: "🔗" },
+    { id: "transactions", label: "Transactions", icon: "💰" },
+    { id: "certificates", label: "Certificates", icon: "📜" },
+    { id: "analytics", label: "Analytics", icon: "📈" },
+    { id: "notifications", label: "Notifications", icon: "🔔" },
+  ],
+
+  ADMIN: [
+    { id: "dashboard", label: "Dashboard", icon: "📊" },
+    { id: "sellers", label: "Manage Sellers", icon: "👥" },
+    { id: "recyclers", label: "Manage Recyclers", icon: "♻️" },
+    { id: "verification", label: "Verification", icon: "✅" },
+  ],
+};
 
 function getRoleName(role) {
   switch (role) {
@@ -53,8 +89,12 @@ export default function DashboardLayout({
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
 
+  const role = String(user?.role || "USER").toUpperCase();
+
+  const navigation =
+  navigationByRole[role] || navigationByRole.USER;
   const filteredPages = useMemo(() => {
-    const query = search.trim().toLowerCase();
+  const query = search.trim().toLowerCase();
 
     if (!query) return [];
 
@@ -64,6 +104,7 @@ export default function DashboardLayout({
         .includes(query)
     );
   }, [search]);
+  
 
   const handleNavigation = (page) => {
     onNavigate?.(page);
@@ -137,7 +178,7 @@ export default function DashboardLayout({
               {user?.name ||
                 user?.fullName ||
                 user?.username ||
-                "EcoNexus User"}
+                "Scrap wala User"}
             </strong>
 
             <span>{getRoleName(user?.role)}</span>
@@ -197,7 +238,7 @@ export default function DashboardLayout({
 
     <div className="dashboard-page-heading">
       <h1>{currentPage}</h1>
-      <p>Manage your EcoNexus activities</p>
+      <p>Manage your ScarpWala activities</p>
     </div>
   </div>
 

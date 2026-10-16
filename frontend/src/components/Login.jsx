@@ -40,7 +40,7 @@ function Login({ onAuth }) {
                     </div>
 
                     <div>
-                        <h1>EcoScrap</h1>
+                        <h1>ScrapWala</h1>
                         <p>Digital waste marketplace</p>
                     </div>
 
@@ -63,8 +63,8 @@ function Login({ onAuth }) {
 
                     <p>
                         {mode === "login"
-                            ? "Access your EcoScrap dashboard and manage your recycling activity."
-                            : "Join EcoScrap and become part of the digital recycling marketplace."}
+                            ? "Access your ScrapWala dashboard and manage your recycling activity."
+                            : "Join ScrapWala and become part of the digital recycling marketplace."}
                     </p>
 
                 </div>
@@ -177,19 +177,19 @@ function Login({ onAuth }) {
                                     }
                                 >
                                     <option value="USER">
-                                        USER
+                                        USER 👤
                                     </option>
 
                                     <option value="COLLECTOR">
-                                        COLLECTOR
+                                        COLLECTOR👨🏻‍💼
                                     </option>
 
                                     <option value="RECYCLER">
-                                        RECYCLER
+                                        RECYCLER♻️🏭
                                     </option>
 
                                     <option value="ORGANIZATION">
-                                        ORGANIZATION
+                                        ORGANIZATION🏢
                                     </option>
                                 </select>
 
@@ -203,7 +203,7 @@ function Login({ onAuth }) {
                         className="auth-submit"
                     >
                         {mode === "login"
-                            ? "Login to EcoScrap"
+                            ? "Login to Scrapwala ➜]"
                             : "Create Account"}
 
                         <span>→</span>
@@ -216,7 +216,7 @@ function Login({ onAuth }) {
 
                     <span>
                         {mode === "login"
-                            ? "New to EcoScrap?"
+                            ? "New to ScrapWala?"
                             : "Already have an account?"}
                     </span>
 
@@ -226,21 +226,21 @@ function Login({ onAuth }) {
                         onClick={() =>
                             setMode(
                                 mode === "login"
-                                    ? "register"
+                                    ? "register 🆕"
                                     : "login"
                             )
                         }
                     >
                         {mode === "login"
-                            ? "Create account"
-                            : "Login instead"}
+                            ? "Create account 🆕"
+                            : "Login instead ➜]"}
                     </button>
 
                 </div>
 
                 {/* Footer */}
                 <div className="auth-footer">
-                    ♻️ Sustainable recycling powered by EcoScrap
+                    ♻️ Sustainable recycling powered by ScrapWala
                 </div>
 
             </div>

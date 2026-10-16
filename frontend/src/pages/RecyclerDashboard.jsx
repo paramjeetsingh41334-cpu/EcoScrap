@@ -15,6 +15,9 @@ import AdvancedAnalytics from "../components/AdvancedAnalytics.jsx";
 
 function RecyclerDashboard({ user, onLogout }) {
     const [activeSection, setActiveSection] = useState("dashboard");
+    const [search, setSearch] = useState("");
+    const [searchOpen, setSearchOpen] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);
 
     const [summary, setSummary] = useState(null);
     const [scrapLots, setScrapLots] = useState([]);
@@ -45,20 +48,99 @@ function RecyclerDashboard({ user, onLogout }) {
     }, []);
 
     return (
-        <div className="app">
-            <header>
-                <div>
-                    <b>♻️ {t("appName")}</b>
+        <div className="app recycler-app">
+            <header className="recycler-topbar">
+                <button
+                    type="button"
+                    className="recycler-menu-button"
+                    aria-label="Open recycler navigation"
+                    aria-expanded={sidebarOpen}
+                    onClick={() => setSidebarOpen(true)}
+                >
+                    ☰
+                </button>
+                <div className="recycler-brand-group">
+                    <span className="recycler-brand-icon">♻️</span>
+                    <div><b>{t("appName")}</b><small>Recycler workspace</small></div>
                     <span className="role">{user.role}</span>
                 </div>
+                <form className="recycler-search" role="search" onSubmit={(event) => {
+                    event.preventDefault();
+                    const query = search.trim().toLowerCase();
+                    const pages = [
+                        ["dashboard", "dashboard home"],
+                        ["scrap-lots", "scrap lots available lots browse materials"],
+                        ["auctions", "auctions live auctions won auctions bidding"],
+                        ["marketplace", "marketplace listings"],
+                        ["purchase-requests", "purchase requests orders"],
+                        ["traceability", "traceability tracking"],
+                        ["transactions", "transactions payments"],
+                        ["certificates", "certificates recycling records"],
+                        ["analytics", "analytics impact reports"],
+                        ["notifications", "notifications alerts"]
+                    ];
+                    const match = pages.find(([, words]) => words.includes(query) || query.split(/\\s+/).some((part) => part && words.includes(part)));
+                    if (match && query) setActiveSection(match[0]);
+                    setSearchOpen(false);
+                }}>
+                    <span aria-hidden="true">🔍</span>
+                    <input
+                        type="search"
+                        value={search}
+                        placeholder="Search recycler features..."
+                        aria-label="Search recycler features"
+                        onFocus={() => setSearchOpen(true)}
+                        onChange={(event) => { setSearch(event.target.value); setSearchOpen(true); }}
+                        onKeyDown={(event) => { if (event.key === "Escape") setSearchOpen(false); }}
+                    />
+                    {search && <button type="button" aria-label="Clear search" onClick={() => { setSearch(""); setSearchOpen(false); }}>×</button>}
+                    {searchOpen && search.trim() && (
+                        <div className="recycler-search-results">
+                            {[
+                                ["dashboard", "🏠", "Dashboard"],
+                                ["scrap-lots", "📦", "Browse Scrap Lots"],
+                                ["auctions", "🔨", "Live Auctions"],
+                                ["marketplace", "🛒", "Marketplace"],
+                                ["purchase-requests", "📥", "Purchase Requests"],
+                                ["traceability", "🔗", "Traceability"],
+                                ["transactions", "💳", "Transactions"],
+                                ["certificates", "🏆", "Certificates"],
+                                ["analytics", "📊", "Analytics"],
+                                ["notifications", "🔔", "Notifications"]
+                            ].filter(([, , label]) => label.toLowerCase().includes(search.trim().toLowerCase())).map(([key, icon, label]) => (
+                                <button key={key} type="button" onClick={() => { setActiveSection(key); setSearch(""); setSearchOpen(false); }}>
+                                    <span>{icon}</span>{label}<span aria-hidden="true">→</span>
+                                </button>
+                            ))}
+                            {![["Dashboard"],["Browse Scrap Lots"],["Live Auctions"],["Marketplace"],["Purchase Requests"],["Traceability"],["Transactions"],["Certificates"],["Analytics"],["Notifications"]].some(([label]) => label.toLowerCase().includes(search.trim().toLowerCase())) && <p>No matching features found.</p>}
+                        </div>
+                    )}
+                </form>
+                <button type="button" className="recycler-logout" onClick={onLogout}>↪ {t("logout")}</button>
             </header>
 
-            <main>
-                <div className="recycler-dashboard-layout" style={{ display: "grid", gridTemplateColumns: "240px minmax(0, 1fr)", gap: "24px", alignItems: "start" }}>
-                    <aside className="recycler-sidebar" style={{ position: "sticky", top: "20px", background: "#fff", border: "1px solid #e5ece8", borderRadius: "20px", padding: "18px", boxShadow: "0 10px 30px rgba(20,70,45,0.08)" }}>
+            {sidebarOpen && (
+                <button
+                    type="button"
+                    className="recycler-sidebar-overlay"
+                    aria-label="Close navigation menu"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
+            <main className="recycler-main">
+                <div className="recycler-dashboard-layout">
+                    <aside className={`recycler-sidebar ${sidebarOpen ? "recycler-sidebar-open" : ""}`}>
+                        <button
+                            type="button"
+                            className="recycler-sidebar-close"
+                            aria-label="Close navigation menu"
+                            onClick={() => setSidebarOpen(false)}
+                        >
+                            ✕
+                        </button>
                         <div style={{ marginBottom: "16px" }}>
                             <small style={{ color: "#6b7c74", fontWeight: 700 }}>RECYCLER PANEL</small>
-                            <h3 style={{ margin: "6px 0 0" }}>♻️ EcoScrap</h3>
+                            <h3 style={{ margin: "6px 0 0" }}>♻️ ScrapWala</h3>
                         </div>
                         <nav style={{ display: "grid", gap: "7px" }}>
                             {[
@@ -73,7 +155,7 @@ function RecyclerDashboard({ user, onLogout }) {
                                 ["analytics", "📊", "Analytics"],
                                 ["notifications", "🔔", "Notifications"]
                             ].map(([key, icon, label]) => (
-                                <button key={key} type="button" onClick={() => setActiveSection(key)}
+                                <button key={key} type="button" onClick={() => { setActiveSection(key); setSidebarOpen(false); }}
                                     style={{ width: "100%", border: "0", borderRadius: "12px", padding: "12px 13px", textAlign: "left", cursor: "pointer", fontWeight: 700, background: activeSection === key ? "#176b43" : "transparent", color: activeSection === key ? "#fff" : "#29443a" }}>
                                     <span style={{ marginRight: "9px" }}>{icon}</span>{label}
                                 </button>
@@ -99,24 +181,31 @@ function RecyclerDashboard({ user, onLogout }) {
                                     textAlign: "left"
                                 }}
                             >
-                                🚪 {t("logout")}
+                                ➜🚪 {t("logout")}
                             </button>
                         </div>
                     </aside>
 
                     <div className="recycler-dashboard-content">
 
-                <section className="hero" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
+                <section className="recycler-dashboard-overview" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
+                    <h2>Dashboard Overview</h2>
+                    <p>Your recycling activity at a glance.</p>
+                </section>
+                <section className="hero recycler-hero" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
+                    <small className="recycler-eyebrow">ScrapWala • RECYCLER DASHBOARD</small>
                     <h2>
                         {t("welcome")}, {user.name}
                     </h2>
 
                     <p>
-                        {t("recyclerDescription")}
+                        {t("recyclerDescription") === "recyclerDescription"
+                            ? "Explore recyclable materials, place purchase requests, and track your environmental impact."
+                            : t("recyclerDescription")}
                     </p>
                 </section>
 
-                <div className="cards" style={{ display: activeSection === "dashboard" ? "grid" : "none" }}>
+                <div className="cards recycler-stat-grid" style={{ display: activeSection === "dashboard" ? "grid" : "none" }}>
                     <div className="card">
                         <small>
                             {t("availableLots")}
@@ -165,9 +254,28 @@ function RecyclerDashboard({ user, onLogout }) {
                     </div>
                 </div>
 
+                <section className="panel recycler-quick-actions" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
+                    <div className="recycler-section-title"><div><small>WORKSPACE</small><h3>⚡ Quick Actions</h3></div><span>♻️</span></div>
+                    <p>Jump straight to your most-used recycling tools.</p>
+                    <div className="recycler-quick-grid">
+                        {[
+                            ["scrap-lots", "📦", "Browse Scrap Lots", "Find available materials"],
+                            ["auctions", "🔨", "Live Auctions", "Bid on bulk materials"],
+                            ["marketplace", "🛒", "Marketplace", "Explore listings"],
+                            ["purchase-requests", "📥", "Purchase Requests", "Track your requests"],
+                            ["certificates", "🏆", "Certificates", "View recycling records"],
+                            ["analytics", "📊", "Analytics", "Review your impact"]
+                        ].map(([key, icon, title, subtitle]) => (
+                            <button key={key} type="button" className="recycler-quick-card" onClick={() => setActiveSection(key)}>
+                                <span>{icon}</span><strong>{title}</strong><small>{subtitle}</small>
+                            </button>
+                        ))}
+                    </div>
+                </section>
+
                 {/* Environmental Impact */}
 
-                <section className="panel impact-panel" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
+                <section className="panel impact-panel recycler-impact" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
                     <h3>
                         🌍 {t("environmentalImpact")}
                     </h3>
@@ -273,7 +381,7 @@ function RecyclerDashboard({ user, onLogout }) {
                                     </p>
 
                                     <p>
-                                        💰{" "}
+                                        💵{" "}
                                         {t("indicativeValue")}:{" "}
                                         <strong>
                                             ₹
@@ -340,6 +448,19 @@ function RecyclerDashboard({ user, onLogout }) {
                     </div>
                 </div>
             </main>
+            <nav className="recycler-mobile-bottom-nav" aria-label="Recycler navigation">
+                {[
+                    ["dashboard", "🏠", "Home"],
+                    ["scrap-lots", "📦", "Lots"],
+                    ["auctions", "🔨", "Auctions"],
+                    ["purchase-requests", "📥", "Requests"],
+                    ["menu", "☰", "More"]
+                ].map(([key, icon, label]) => (
+                    <button key={key} type="button" className={activeSection === key ? "active" : ""} onClick={() => { if (key === "menu") { setSidebarOpen(true); } else { setActiveSection(key); setSidebarOpen(false); } }}>
+                        <span>{icon}</span><small>{label}</small>
+                    </button>
+                ))}
+            </nav>
         </div>
     );
 }

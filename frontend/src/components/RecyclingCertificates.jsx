@@ -199,7 +199,7 @@ function RecyclingCertificates() {
 
                 <body>
                     <div class="certificate">
-                        <h1>♻️ EcoScrap</h1>
+                        <h1>♻️ ScrapWala</h1>
 
                         <h2>
                             RECYCLING CERTIFICATE
@@ -270,7 +270,7 @@ function RecyclingCertificates() {
                         <p class="footer">
                             This certificate confirms that
                             the above recyclable material was
-                            transferred through the EcoScrap
+                            transferred through the ScrapWala
                             recycling network.
                         </p>
 

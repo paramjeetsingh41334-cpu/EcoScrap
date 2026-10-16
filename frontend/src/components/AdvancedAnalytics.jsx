@@ -98,7 +98,7 @@ function AdvancedAnalytics() {
 
                     <div>
                         <span className="analytics-eyebrow">
-                            ECO SCRAP INSIGHTS
+                            Scrap Wala INSIGHTS
                         </span>
 
                         <h3>

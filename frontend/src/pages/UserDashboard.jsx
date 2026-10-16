@@ -707,7 +707,7 @@ const openReceipt = (pickup) => {
                 {activePage === "analytics" && (
                     <section className="panel">
                         <h3>📈 Analytics</h3>
-                        <p>Track your EcoScrap pickup, recycling and Green Credit activity.</p>
+                        <p>Track your ScrapWala pickup, recycling and Green Credit activity.</p>
                         <div className="cards">
                             <div className="card">
                                 <small>{t("pickups")}</small>
@@ -1354,7 +1354,7 @@ const openReceipt = (pickup) => {
                 <section className="panel">
 
                     <h3>
-                        🚀 {t("ecoscrapFlow")}
+                        🚀 {t("ScrapWalaFlow")}
                     </h3>
 
                     <div className="flow">
@@ -1380,8 +1380,8 @@ const openReceipt = (pickup) => {
                         aria-current={activePage === "dashboard" ? "page" : undefined}
                         onClick={() => setActivePage("dashboard")}
                     >
-                        <span className="mobile-bottom-nav-icon" aria-hidden="true">⌂</span>
-                        <span>Home</span>
+                        <span className="mobile-bottom-nav-icon" aria-hidden="true">🏠</span>
+                        <span> Home</span>
                     </button>
 
                     <button

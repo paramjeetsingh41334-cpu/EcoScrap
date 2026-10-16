@@ -19,7 +19,7 @@ if ("serviceWorker" in navigator) {
         if (import.meta.env.PROD) {
             navigator.serviceWorker
                 .register("/sw.js")
-                .then(() => console.log("EcoScrap PWA service worker registered"))
+                .then(() => console.log("ScrapWala PWA service worker registered"))
                 .catch((error) =>
                     console.error("Service worker registration failed:", error)
                 );
@@ -35,12 +35,12 @@ if ("serviceWorker" in navigator) {
                 const cacheNames = await caches.keys();
 
                 for (const cacheName of cacheNames) {
-                    if (cacheName.startsWith("ecoscrap-")) {
+                    if (cacheName.startsWith("ScrapWala-")) {
                         await caches.delete(cacheName);
                     }
                 }
 
-                console.log("EcoScrap: development service worker/cache cleared");
+                console.log("ScrapWala: development service worker/cache cleared");
             } catch (error) {
                 console.warn("Could not clear development PWA cache:", error);
             }

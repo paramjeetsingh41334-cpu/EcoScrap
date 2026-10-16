@@ -14,6 +14,7 @@ import MyAuctions from "../components/MyAuction.jsx";
 import RecyclingCertificates from "../components/RecyclingCertificates.jsx";
 import AdvancedAnalytics from "../components/AdvancedAnalytics.jsx";
 import SmartRoute from "../components/SmartRoute.jsx";
+import DashboardLayout from "../components/DashboardLayout.jsx";
 
 function CollectorDashboard({ user, onLogout }) {
     const { t } = useLanguage();
@@ -401,7 +402,7 @@ function CollectorDashboard({ user, onLogout }) {
 
             <body>
                 <div class="receipt">
-                    <h1>♻️ EcoScrap</h1>
+                    <h1>♻️ ScrapWala</h1>
 
                     <h2>
                         🧾 ${t("digitalReceipt")}
@@ -478,121 +479,52 @@ function CollectorDashboard({ user, onLogout }) {
         }
     };
 
+
     return (
-        <div className="collector-dashboard">
+    <DashboardLayout
+        user={user}
+        onLogout={onLogout}
+        activePage={activeSection}
+        onNavigate={setActiveSection}
+    >
 
-            {/* TOPBAR */}
-            <header className="collector-topbar">
-                <div className="collector-brand">
-                    <div className="collector-brand-icon">
-                        ♻️
-                    </div>
+          
 
-                    <div>
-                        <b>EcoScrap</b>
-
-                        <span className="collector-role">
-                            {user.role}
-                        </span>
-                    </div>
-                </div>
-
-                <button
-                    className="collector-logout"
-                    onClick={onLogout}
-                >
-                    {t("logout")}
-                </button>
-            </header>
-
-            <main className="collector-main">
-                <div
-                    className="collector-dashboard-layout"
-                    style={{
-                        display: "grid",
-                        gridTemplateColumns: "240px minmax(0, 1fr)",
-                        gap: "24px",
-                        alignItems: "start"
-                    }}
-                >
-                    <aside
-                        className="collector-sidebar"
-                        style={{
-                            position: "sticky",
-                            top: "20px",
-                            background: "#ffffff",
-                            border: "1px solid #e5ece8",
-                            borderRadius: "20px",
-                            padding: "18px",
-                            boxShadow: "0 10px 30px rgba(20,70,45,0.08)"
-                        }}
-                    >
-                        <div style={{ marginBottom: "16px" }}>
-                            <small style={{ color: "#6b7c74", fontWeight: 700 }}>COLLECTOR PANEL</small>
-                            <h3 style={{ margin: "6px 0 0" }}>♻️ EcoScrap</h3>
-                        </div>
-
-                        <nav style={{ display: "grid", gap: "7px" }}>
-                            {[
-                                ["dashboard", "🏠", "Dashboard"],
-                                ["notifications", "🔔", "Notifications"],
-                                ["pickup-requests", "📥", "Pickup Requests"],
-                                ["my-pickups", "🚚", "My Pickups"],
-                                ["scrap-lots", "📦", "Scrap Lots"],
-                                ["smart-route", "🗺️", "Smart Route"],
-                                ["marketplace", "🛒", "Marketplace"],
-                                ["traceability", "🔗", "Traceability"],
-                                ["transactions", "💳", "Transactions"],
-                                ["analytics", "📊", "Analytics"],
-                                ["pricing", "♻️", "Pricing & Booking"]
-                            ].map(([key, icon, label]) => (
-                                <button
-                                    key={key}
-                                    type="button"
-                                    onClick={() => setActiveSection(key)}
-                                    style={{
-                                        width: "100%",
-                                        border: "0",
-                                        borderRadius: "12px",
-                                        padding: "12px 13px",
-                                        textAlign: "left",
-                                        cursor: "pointer",
-                                        fontWeight: 700,
-                                        background: activeSection === key ? "#176b43" : "transparent",
-                                        color: activeSection === key ? "#fff" : "#29443a",
-                                        transition: "0.2s"
-                                    }}
-                                >
-                                    <span style={{ marginRight: "9px" }}>{icon}</span>
-                                    {label}
-                                </button>
-                            ))}
-                        </nav>
-
-                        <div
-                            style={{
-                                marginTop: "18px",
-                                paddingTop: "15px",
-                                borderTop: "1px solid #e8efeb"
-                            }}
-                        >
-                            <small style={{ color: "#718079" }}>Signed in as</small>
-                            <strong style={{ display: "block", marginTop: "4px" }}>{user.name}</strong>
-                        </div>
-                    </aside>
+            
+    
+                   
+                   
 
                     <div className="collector-dashboard-content">
+
+
+
+                {/* CORE WASTE JOURNEY — mirrors the User Dashboard */}
+                <section
+                    className="collector-waste-journey"
+                    style={{ display: activeSection === "dashboard" ? "block" : "none" }}
+                >
+                    <h3>♻️ Core Waste Journey</h3>
+                    <div className="collector-waste-steps">
+                        <span>♻️ Collect</span><b>→</b>
+                        <span>🚚 Pick up</span><b>→</b>
+                        <span>⚖️ Weigh</span><b>→</b>
+                        <span>🧾 Record</span><b>→</b>
+                        <span>🏭 Recycler</span>
+                    </div>
+                    <div className="collector-waste-progress"><span /></div>
+                </section>
 
                 {/* HERO */}
                 <section className="collector-hero" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
                     <div>
                         <span className="collector-eyebrow">
-                            ECOSCRAP DASHBOARD
+                             SCARP WALA DASHBOARD
                         </span>
 
                         <h1>
                             {t("welcome")},{" "}
-                            {user.name}
+                            {user?.name || user?.fullName || "Collector"}
                         </h1>
 
                         <p>
@@ -607,7 +539,12 @@ function CollectorDashboard({ user, onLogout }) {
                 </section>
 
                 {/* STATISTICS */}
-                <section className="collector-stat-grid" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
+                <section
+                    className="collector-stat-grid"
+                    style={{
+                        display: activeSection === "dashboard" ? "grid" : "none",
+                    }}
+                >
 
                     <div className="collector-stat-card">
                         <div className="collector-stat-icon">
@@ -681,8 +618,45 @@ function CollectorDashboard({ user, onLogout }) {
 
                 </section>
 
+
+
+                {/* QUICK ACTIONS — buttons navigate to existing working sections */}
+                <section
+                    className="collector-quick-actions"
+                    style={{ display: activeSection === "dashboard" ? "block" : "none" }}
+                >
+                    <h3>⚡ Quick Actions</h3>
+                    <p>Open your most-used collector tools quickly.</p>
+                    <div className="collector-quick-actions-row">
+                        {[
+                            { id: "pickup-requests", icon: "🚚", label: "Pickup Requests" },
+                            { id: "my-pickups", icon: "📦", label: "My Pickups" },
+                            { id: "pricing", icon: "🧮", label: "Price Calculator" },
+                            { id: "scrap-lots", icon: "♻️", label: "Scrap Lots" },
+                            { id: "smart-route", icon: "🗺️", label: "Smart Route" },
+                            { id: "marketplace", icon: "🏪", label: "Marketplace" },
+                            { id: "transactions", icon: "💵", label: "Transactions" },
+                        ].map((action) => (
+                            <button
+                                type="button"
+                                className="collector-quick-action-button"
+                                key={action.id}
+                                onClick={() => setActiveSection(action.id)}
+                            >
+                                <span>{action.icon}</span>
+                                <strong>{action.label}</strong>
+                            </button>
+                        ))}
+                    </div>
+                </section>
+
                 {/* ENVIRONMENTAL IMPACT */}
-                <section className="collector-impact-section" style={{ display: activeSection === "dashboard" ? "block" : "none" }}>
+                <section
+                    className="collector-impact-section"
+                    style={{
+                        display: activeSection === "dashboard" ? "block" : "none",
+                    }}
+                >
                     <div className="collector-section-heading">
                         <div>
                             <span>
@@ -1277,7 +1251,7 @@ function CollectorDashboard({ user, onLogout }) {
                                             0 && (
                                             <div className="collector-result-row amount-row">
                                                 <span>
-                                                    💰{" "}
+                                                    💵{" "}
                                                     {
                                                         t(
                                                             "finalAmount"
@@ -1773,7 +1747,7 @@ function CollectorDashboard({ user, onLogout }) {
 
                                         <div>
                                             <small>
-                                                💰{" "}
+                                                💵{" "}
                                                 {
                                                     t(
                                                         "indicativeValue"
@@ -1931,7 +1905,7 @@ function CollectorDashboard({ user, onLogout }) {
 
                         <h3>
                             {t(
-                                "ecoscrapFlow"
+                                "ScrapWalaFlow"
                             )}
                         </h3>
 
@@ -1944,11 +1918,26 @@ function CollectorDashboard({ user, onLogout }) {
 
                 </section>
 
-                    </div>
-                </div>
-            </main>
-        </div>
+           </div>
+      <nav className="collector-mobile-bottom-nav" aria-label="Collector mobile navigation">
+        <button type="button" className={activeSection === "dashboard" ? "active" : ""} onClick={() => setActiveSection("dashboard")}>
+          <span aria-hidden="true">🏠</span><small>Home</small>
+        </button>
+        <button type="button" className={activeSection === "pickup-requests" || activeSection === "my-pickups" ? "active" : ""} onClick={() => setActiveSection("pickup-requests")}>
+          <span aria-hidden="true">🚚</span><small>Pickups</small>
+        </button>
+        <button type="button" className="collector-mobile-book" onClick={() => setActiveSection("pricing")}>
+          <span aria-hidden="true">＋</span><small>Book</small>
+        </button>
+        <button type="button" className={activeSection === "marketplace" ? "active" : ""} onClick={() => setActiveSection("marketplace")}>
+          <span aria-hidden="true">🏪</span><small>Market</small>
+        </button>
+        <button type="button" onClick={() => document.querySelector(".dashboard-menu-button")?.click()}>
+          <span aria-hidden="true">☰</span><small>Menu</small>
+        </button>
+      </nav>
+    </DashboardLayout>
     );
 }
 
-export default CollectorDashboard;
+export default CollectorDashboard;              

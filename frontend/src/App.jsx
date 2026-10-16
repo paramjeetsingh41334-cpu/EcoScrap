@@ -49,6 +49,10 @@ function LanguageSelector() {
                     <option value="mr">
                         🇮🇳 मराठी
                     </option>
+
+                    <option value="hry">
+                    🟢 हरियाणवी
+                    </option>
                 </select>
             </div>
         </div>
@@ -104,36 +108,33 @@ function AppContent() {
     // =====================================
 
     return (
-        <div className="ecoscrap-app">
-            <LanguageSelector />
+    <div className="ecoscrap-app">
+        {!user ? (
+            <>
+                <div className="app-language-selector">
+                    <LanguageSelector />
+                </div>
+                <Login onAuth={auth} />
+            </>
+        ) : (
+            <>
+                <div className="app-language-selector">
+                    <LanguageSelector />
+                </div>
 
-            {!user ? (
-                <Login
-                    onAuth={auth}
-                />
-            ) : user.role === "ADMIN" ? (
-                <AdminDashboard
-                    user={user}
-                    onLogout={logout}
-                />
-            ) : user.role === "COLLECTOR" ? (
-                <CollectorDashboard
-                    user={user}
-                    onLogout={logout}
-                />
-            ) : user.role === "RECYCLER" ? (
-                <RecyclerDashboard
-                    user={user}
-                    onLogout={logout}
-                />
-            ) : (
-                <UserDashboard
-                    user={user}
-                    onLogout={logout}
-                />
-            )}
-        </div>
-    );
+                {user.role === "ADMIN" ? (
+                    <AdminDashboard user={user} onLogout={logout} />
+                ) : user.role === "COLLECTOR" ? (
+                    <CollectorDashboard user={user} onLogout={logout} />
+                ) : user.role === "RECYCLER" ? (
+                    <RecyclerDashboard user={user} onLogout={logout} />
+                ) : (
+                    <UserDashboard user={user} onLogout={logout} />
+                )}
+            </>
+        )}
+    </div>
+);
 }
 
 

@@ -3,6 +3,9 @@ import { api } from "../api.js";
 
 function AdminDashboard({ user, onLogout }) {
     const [activeSection, setActiveSection] = useState("dashboard");
+    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [search, setSearch] = useState("");
+    const [searchOpen, setSearchOpen] = useState(false);
 
     const [recyclers, setRecyclers] = useState([]);
     const [sellers, setSellers] = useState([]);
@@ -92,13 +95,75 @@ function AdminDashboard({ user, onLogout }) {
                     </div>
 
                     <div>
-                        <h2>EcoScrap</h2>
+                        <h2>ScrapWala</h2>
                         <small>Admin Dashboard</small>
                     </div>
                 </div>
 
-                <div />
+                <button
+                    type="button"
+                    className="admin-menu-button"
+                    aria-label="Open admin navigation"
+                    aria-expanded={sidebarOpen}
+                    onClick={() => setSidebarOpen(true)}
+                >
+                    ☰
+                </button>
+                <form
+                    className="admin-search"
+                    role="search"
+                    onSubmit={(event) => {
+                        event.preventDefault();
+                        const query = search.trim().toLowerCase();
+                        const pages = [
+                            ["dashboard", "dashboard home overview"],
+                            ["sellers", "sellers seller manage collectors organizations"],
+                            ["recyclers", "recyclers recycler manage recycling partners"],
+                            ["verification", "verification verify pending approved trust"]
+                        ];
+                        const match = pages.find(([, words]) => words.includes(query) || words.split(" ").some((word) => word.startsWith(query)));
+                        if (match && query) setActiveSection(match[0]);
+                        setSearchOpen(false);
+                    }}
+                >
+                    <span aria-hidden="true">🔎</span>
+                    <input
+                        type="search"
+                        value={search}
+                        placeholder="Search admin features..."
+                        aria-label="Search admin features"
+                        onFocus={() => setSearchOpen(true)}
+                        onChange={(event) => { setSearch(event.target.value); setSearchOpen(true); }}
+                        onKeyDown={(event) => { if (event.key === "Escape") setSearchOpen(false); }}
+                    />
+                    {search && <button type="button" aria-label="Clear search" onClick={() => { setSearch(""); setSearchOpen(false); }}>×</button>}
+                    {searchOpen && search.trim() && (
+                        <div className="admin-search-results">
+                            {[
+                                ["dashboard", "🏠", "Dashboard"],
+                                ["sellers", "🏪", "Sellers"],
+                                ["recyclers", "♻️", "Recyclers"],
+                                ["verification", "🛡️", "Verification"]
+                            ].filter(([, , label]) => label.toLowerCase().includes(search.trim().toLowerCase())).map(([key, icon, label]) => (
+                                <button key={key} type="button" onClick={() => { setActiveSection(key); setSearch(""); setSearchOpen(false); setSidebarOpen(false); }}>
+                                    <span>{icon}</span><span>{label}</span><span aria-hidden="true">→</span>
+                                </button>
+                            ))}
+                            {!["Dashboard", "Sellers", "Recyclers", "Verification"].some((label) => label.toLowerCase().includes(search.trim().toLowerCase())) && <p>No matching features found.</p>}
+                        </div>
+                    )}
+                </form>
+                <button type="button" className="admin-logout-top" onClick={onLogout}>↪ Logout</button>
             </header>
+
+            {sidebarOpen && (
+                <button
+                    type="button"
+                    className="admin-sidebar-overlay"
+                    aria-label="Close admin navigation"
+                    onClick={() => setSidebarOpen(false)}
+                />
+            )}
 
             <main className="admin-dashboard-container">
                 <div
@@ -111,7 +176,7 @@ function AdminDashboard({ user, onLogout }) {
                     }}
                 >
                     <aside
-                        className="admin-sidebar"
+                        className={`admin-sidebar ${sidebarOpen ? "admin-sidebar-open" : ""}`}
                         style={{
                             position: "sticky",
                             top: "20px",
@@ -122,9 +187,10 @@ function AdminDashboard({ user, onLogout }) {
                             boxShadow: "0 10px 30px rgba(20,70,45,0.08)"
                         }}
                     >
+                        <button type="button" className="admin-sidebar-close" aria-label="Close admin menu" onClick={() => setSidebarOpen(false)}>✕</button>
                         <div style={{ marginBottom: "16px" }}>
                             <small style={{ color: "#6b7c74", fontWeight: 700 }}>ADMIN PANEL</small>
-                            <h3 style={{ margin: "6px 0 0" }}>♻️ EcoScrap</h3>
+                            <h3 style={{ margin: "6px 0 0" }}>♻️ ScrapWala</h3>
                         </div>
 
                         <nav style={{ display: "grid", gap: "7px" }}>
@@ -137,7 +203,7 @@ function AdminDashboard({ user, onLogout }) {
                                 <button
                                     key={key}
                                     type="button"
-                                    onClick={() => setActiveSection(key)}
+                                    onClick={() => { setActiveSection(key); setSidebarOpen(false); }}
                                     style={{
                                         width: "100%",
                                         border: "0",
@@ -198,7 +264,7 @@ function AdminDashboard({ user, onLogout }) {
                         </h1>
 
                         <p>
-                            Manage and verify EcoScrap users
+                            Manage and verify ScrapWala users
                             and trusted recycling partners.
                         </p>
                     </div>
@@ -597,6 +663,27 @@ function AdminDashboard({ user, onLogout }) {
                     </div>
                 </div>
             </main>
+            <nav className="admin-mobile-bottom-nav" aria-label="Admin navigation">
+                {[
+                    ["dashboard", "🏠", "Home"],
+                    ["sellers", "🏪", "Sellers"],
+                    ["recyclers", "♻️", "Recyclers"],
+                    ["verification", "🛡️", "Verify"],
+                    ["menu", "☰", "More"]
+                ].map(([key, icon, label]) => (
+                    <button
+                        key={key}
+                        type="button"
+                        className={activeSection === key ? "active" : ""}
+                        onClick={() => {
+                            if (key === "menu") setSidebarOpen(true);
+                            else { setActiveSection(key); setSidebarOpen(false); }
+                        }}
+                    >
+                        <span>{icon}</span><small>{label}</small>
+                    </button>
+                ))}
+            </nav>
         </div>
     );
 }

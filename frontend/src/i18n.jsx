@@ -16,7 +16,7 @@ const translations = {
     // =========================
 
     en: {
-        appName: "EcoScrap",
+        appName: "ScrapWala",
         language: "Language",
         english: "English",
         hindi: "Hindi",
@@ -74,7 +74,7 @@ const translations = {
         pickupTracking: "Pickup Tracking",
         materialPricing: "Material Pricing",
         estimateValue: "Estimate Value",
-        ecoscrapProcess: "EcoScrap Process",
+        ScrapWalaProcess: "ScrapWala Process",
 
         // =========================
         // Dashboard statistics
@@ -195,10 +195,10 @@ const translations = {
         confirmPayment: "Confirm Payment",
         viewFullReceipt: "View Full Receipt",
         thankYouRecycling:
-            "Thank you for recycling with EcoScrap!",
+            "Thank you for recycling with ScrapWala!",
 
         // =========================
-        // Scrap / calculator
+        // Scrap / calculator S
         // =========================
 
         scrap: "Scrap",
@@ -260,7 +260,7 @@ const translations = {
         collectorAccepts: "Collector Accepts",
         handover: "Handover",
         transaction: "Transaction",
-        ecoscrapFlow: "EcoScrap Flow",
+        ScrapWalaFlow: "ScrapWala Flow",
         flowText:
             "Select Scrap → Enter Weight → Calculate Price → Book Pickup → Collector → Weighing → Payment → Recycler → Traceability",
 
@@ -486,7 +486,7 @@ const translations = {
         pickupTracking: "पिकअप ट्रैकिंग",
         materialPricing: "सामग्री मूल्य",
         estimateValue: "मूल्य का अनुमान",
-        ecoscrapProcess: "EcoScrap प्रक्रिया",
+        ScrapWalaProcess: "ScrapWala प्रक्रिया",
 
         pickups: "पिकअप",
         completed: "पूर्ण",
@@ -1084,6 +1084,232 @@ const translations = {
 };
 
 
+
+// =====================================
+// HARYANVI
+// Hindi is used as a readable fallback for long technical labels;
+// common navigation and user-facing messages use conversational Haryanvi.
+// =====================================
+
+translations.hry = {
+    ...translations.hi,
+    appName: "ScrapWala",
+    language: "बोली",
+    english: "अंग्रेज़ी",
+    hindi: "हिंदी",
+    marathi: "मराठी",
+    haryanvi: "हरियाणवी",
+    logout: "लॉग आउट कर दे",
+    welcome: "राम-राम, स्वागत सै",
+    dashboardDescription: "घरां, कलेक्टरां, संस्थां अर रीसाइक्लरां नै एक साथ जोड़ै सै।",
+    available: "मौजूद सै",
+    verified: "जांच हो ली",
+    pending: "बाकी सै",
+    completedStatus: "पूरा हो लिया",
+    accepted: "मान लिया",
+    rejected: "मना कर दिया",
+    open: "खुल्ला सै",
+    closed: "बंद सै",
+    loading: "लोड हो रह्या सै...",
+    refresh: "फेर तै देख",
+    save: "सेव कर दे",
+    cancel: "रद्द कर दे",
+    close: "बंद कर दे",
+    submit: "जमा कर दे",
+    create: "बणा दे",
+    update: "अपडेट कर दे",
+    delete: "हटा दे",
+    search: "खोज",
+    filter: "छांट",
+    details: "ब्यौरा",
+    actions: "काम",
+    yes: "हां",
+    no: "ना",
+    noData: "कोई डेटा ना मिल्या।",
+    tryAgain: "फेर तै कोशिश कर",
+    viewDetails: "ब्यौरा देख",
+    back: "पीछे",
+    next: "आगै",
+    previous: "पिछला",
+    recyclingOperations: "रीसाइक्लिंग के काम",
+    digitalInventory: "डिजिटल माल",
+    yourImpact: "तेरा असर",
+    pickupService: "स्क्रैप उठवाण की सेवा",
+    pickupTracking: "पिकअप का पता रख",
+    materialPricing: "माल के भाव",
+    estimateValue: "भाव का अंदाजा",
+    pickups: "पिकअप",
+    completed: "पूरा हो लिया",
+    recycledKg: "रीसाइकिल किलोग्राम",
+    amount: "रकम ₹",
+    greenCredits: "ग्रीन क्रेडिट",
+    environmentalImpact: "पर्यावरण पे असर",
+    wasteRecycled: "रीसाइकिल कचरा",
+    treeEquivalent: "कितने पेड़ां जितना",
+    waterSaving: "पाणी बचत का अंदाजा",
+    notifications: "सूचनाएं",
+    hide: "छुपा दे",
+    view: "देख ले",
+    noNotifications: "अभी कोई सूचना ना सै।",
+    markAllAsRead: "सारी पढ़ी हुई कर दे",
+    markRead: "पढ़ी हुई कर दे",
+    pickupAccepted: "तेरा पिकअप कलेक्टर नै मान लिया सै।",
+    collectorOnWay: "कलेक्टर रास्ते में सै।",
+    collectorArrived: "कलेक्टर पहुंच गया सै।",
+    pickupCancelled: "तेरा पिकअप रद्द हो गया सै।",
+    pickupCompleted: "तेरा पिकअप पूरा हो गया सै।",
+    bookScrapPickup: "स्क्रैप पिकअप बुक कर",
+    pickupAddress: "पिकअप का पता",
+    enterCompletePickupAddress: "पिकअप का पूरा पता लिख दे",
+    pickupTimeSlot: "पिकअप का टाइम",
+    selectTimeSlot: "टाइम चुन ले",
+    addScrapItemButton: "स्क्रैप का सामान जोड़",
+    pickupItems: "पिकअप का सामान",
+    bookPickup: "पिकअप बुक कर",
+    myPickupRequests: "मेरे पिकअप के अनुरोध",
+    noPickupRequests: "अभी कोई पिकअप अनुरोध ना सै।",
+    address: "पता",
+    slot: "टाइम स्लॉट",
+    actualWeight: "असली वजन",
+    actualWeightKg: "असली वजन (किलो)",
+    finalAmount: "आखिरी रकम",
+    onTheWay: "रास्ते में सै",
+    arrived: "पहुंच गया",
+    enterActualWeight: "असली वजन लिख",
+    completePickup: "पिकअप पूरा कर",
+    addAtLeastOneScrapItem: "कम तै कम एक स्क्रैप आइटम जोड़ दे।",
+    enterPickupAddress: "अपना पिकअप का पता लिख दे।",
+    selectPickupSlot: "पिकअप का टाइम चुन ले।",
+    gettingPickupLocation: "पिकअप की लोकेशन मिल री सै...",
+    pickupLocationCaptured: "पिकअप की लोकेशन मिल गई।",
+    pickupBookedSuccessfully: "पिकअप बुक हो गया! अंदाजे की रकम:",
+    selectScrapValidWeight: "स्क्रैप चुन अर सही वजन लिख।",
+    pickupAcceptedSuccessfully: "पिकअप मान लिया गया!",
+    enterValidActualWeight: "सही असली वजन लिख दे।",
+    pickupCompletedSuccessfully: "पिकअप पूरा हो लिया!",
+    paymentConfirmedSuccessfully: "पेमेंट की पुष्टि हो गई!",
+    digitalReceipt: "डिजिटल रसीद",
+    receiptNo: "रसीद नंबर",
+    status: "हाल",
+    paymentStatus: "पेमेंट का हाल",
+    paid: "पैसे दे दिए",
+    confirmPayment: "पेमेंट पक्का कर",
+    viewFullReceipt: "पूरी रसीद देख",
+    thankYouRecycling: "ScrapWala के साथ रीसाइक्लिंग करणे खातर धन्यवाद!",
+    scrap: "स्क्रैप",
+    scrapPriceList: "स्क्रैप के भाव",
+    scrapPriceCalculator: "स्क्रैप भाव कैलकुलेटर",
+    selectScrap: "स्क्रैप चुन",
+    selectMaterial: "माल चुन",
+    weight: "वजन",
+    weightKg: "वजन (किलो)",
+    enterWeight: "वजन लिख",
+    rate: "भाव",
+    estimatedValue: "अंदाजे की कीमत",
+    availableLots: "मौजूद लॉट",
+    loadingLots: "स्क्रैप लॉट लोड हो रहे सैं...",
+    noDigitalLots: "इस टैम कोई डिजिटल स्क्रैप लॉट ना सै।",
+    collector: "कलेक्टर",
+    liveAuctions: "लाइव नीलामी",
+    auctionsWon: "जीती हुई नीलामी",
+    marketplace: "रीसाइक्लर मार्केटप्लेस",
+    purchaseRequests: "खरीद के अनुरोध",
+    myPurchaseRequests: "मेरे खरीद के अनुरोध",
+    traceability: "कचरे का पूरा रिकॉर्ड",
+    transactionHistory: "लेन-देन का रिकॉर्ड",
+    recyclerRequests: "रीसाइक्लर के अनुरोध",
+    requestStatus: "अनुरोध का हाल",
+    recycler: "रीसाइक्लर",
+    verifiedRecycler: "जांच्या हुआ रीसाइक्लर",
+    accept: "मान ले",
+    reject: "मना कर दे",
+    availablePickupRequests: "मौजूद पिकअप अनुरोध",
+    noAvailablePickupRequests: "अभी कोई पिकअप अनुरोध ना सै।",
+    acceptPickup: "पिकअप मान ले",
+    calculatePrice: "भाव जोड़",
+    enterWeightLabel: "वजन लिख",
+    payment: "पेमेंट",
+    weighing: "वजन करना",
+    liveMarketplace: "लाइव मार्केटप्लेस",
+    auction: "नीलामी",
+    auctions: "नीलामियां",
+    createLiveAuction: "लाइव नीलामी बणा",
+    myAuctions: "मेरी नीलामियां",
+    material: "माल",
+    estimatedWeight: "अंदाजे का वजन",
+    startingBid: "शुरुआती बोली",
+    currentBid: "अभी की बोली",
+    placeBid: "बोली लगा",
+    closeAuction: "नीलामी बंद कर",
+    winner: "जीतण वाला",
+    quantity: "मात्रा",
+    price: "भाव",
+    pricePerKg: "भाव / किलो",
+    seller: "बेचण वाला",
+    requestPurchase: "खरीद का अनुरोध भेज",
+    myListings: "मेरी लिस्टिंग",
+    availableListings: "मौजूद लिस्टिंग",
+    completePurchase: "खरीद पूरी कर",
+    wasteJourney: "कचरे का सफर",
+    wasteTraceabilityTitle: "कचरे का रिकॉर्ड",
+    handoverProof: "सौंपण का सबूत",
+    gpsLocation: "GPS लोकेशन",
+    photoProof: "फोटो का सबूत",
+    verifiedRecord: "जांच्या हुआ रिकॉर्ड",
+    recyclingCertificates: "रीसाइक्लिंग सर्टिफिकेट",
+    generateCertificate: "सर्टिफिकेट बणा",
+    viewCertificate: "सर्टिफिकेट देख",
+    printCertificate: "सर्टिफिकेट प्रिंट कर",
+    advancedAnalytics: "एडवांस जानकारी",
+    totalRevenue: "कुल कमाई",
+    totalWeight: "कुल वजन",
+    totalPickups: "कुल पिकअप",
+    averageValue: "औसत कीमत",
+    review: "राय",
+    reviews: "राय",
+    rating: "रेटिंग",
+    comment: "टिप्पणी",
+    writeReview: "अपनी राय लिख",
+    submitReview: "राय जमा कर",
+    collectorLogistics: "कलेक्टर के रास्ते",
+    smartRouteOptimization: "स्मार्ट रूट सुधार",
+    refreshRoute: "रूट फेर तै देख",
+    currentLocation: "अभी की लोकेशन",
+    routeStops: "रास्ते के ठहराव",
+    distance: "दूरी",
+    drivingTime: "गाड़ी चलाण का टैम",
+    handlingTime: "काम निपटाण का टैम",
+    totalTime: "कुल टैम",
+    navigate: "रास्ता देख",
+    adminControlCenter: "एडमिन कंट्रोल सेंटर",
+    adminDashboard: "एडमिन डैशबोर्ड",
+    sellerVerification: "बेचण वाले की जांच",
+    recyclerVerification: "रीसाइक्लर की जांच",
+    totalUsers: "कुल यूजर",
+    verifiedUsers: "जांच्या हुए यूजर",
+    verify: "जांच कर",
+    unverify: "जांच हटादे",
+    welcomeBack: "फेर तै राम-राम",
+    getStarted: "शुरू कर",
+    phoneNumber: "फोन नंबर",
+    password: "पासवर्ड",
+    name: "नाम",
+    role: "रोल",
+    login: "लॉगिन",
+    register: "रजिस्टर कर",
+    createAccount: "खाता बणा",
+    alreadyHaveAccount: "पहले तै खाता सै?",
+    dontHaveAccount: "खाता ना सै?",
+    switchToLogin: "लॉगिन कर",
+    switchToRegister: "खाता बणा",
+    transactions: "लेन-देन",
+    receipt: "रसीद",
+    transactionAmount: "लेन-देन की रकम",
+    transactionDate: "लेन-देन की तारीख",
+    transactionCompleted: "लेन-देन पूरा हो लिया"
+};
+
+
 // =====================================
 // LANGUAGE CONTEXT
 // =====================================
@@ -1097,12 +1323,13 @@ const LanguageContext = createContext(null);
 
 export function getLanguage() {
     const savedLanguage =
-        localStorage.getItem("ecoscrap-language");
+        localStorage.getItem("ScrapWala-language");
 
     if (
         savedLanguage === "en" ||
         savedLanguage === "hi" ||
-        savedLanguage === "mr"
+        savedLanguage === "mr" ||
+        savedLanguage === "hry"
     ) {
         return savedLanguage;
     }
@@ -1123,13 +1350,14 @@ export function LanguageProvider({ children }) {
         if (
             newLanguage !== "en" &&
             newLanguage !== "hi" &&
-            newLanguage !== "mr"
+            newLanguage !== "mr" &&
+            newLanguage !== "hry"
         ) {
             return;
         }
 
         localStorage.setItem(
-            "ecoscrap-language",
+            "ScrapWala-language",
             newLanguage
         );
 

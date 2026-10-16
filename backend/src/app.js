@@ -22,7 +22,25 @@ import certificateRoutes from "./routes/certificate.routes.js";
 
 const app = express();
 app.use(helmet());
-app.use(cors({origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials:true}));
+const allowedOrigins = [
+  "http://localhost:5173",
+  "http://localhost:5174",
+  "https://eco-scrap-lac.vercel.app",
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests without an Origin header (e.g. server-to-server).
+      if (!origin || allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new Error(`CORS blocked for origin: ${origin}`));
+    },
+    credentials: true,
+  })
+);
 app.use(express.json({limit:'1mb'}));
 app.use(cookieParser());
 app.use(rateLimit({windowMs:15*60*1000, max:500, standardHeaders:true, legacyHeaders:false}));
