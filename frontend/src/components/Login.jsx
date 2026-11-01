@@ -58,7 +58,7 @@ function Login({ onAuth }) {
                     <h2>
                         {mode === "login"
                             ? "Sign in to your account"
-                            : "Create your account"}
+                            : "Create your new account"}
                     </h2>
 
                     <p>
@@ -220,21 +220,17 @@ function Login({ onAuth }) {
                             : "Already have an account?"}
                     </span>
 
-                    <button
-                        type="button"
-                        className="auth-switch-button"
-                        onClick={() =>
-                            setMode(
-                                mode === "login"
-                                    ? "register 🆕"
-                                    : "login"
-                            )
-                        }
-                    >
-                        {mode === "login"
-                            ? "Create account 🆕"
-                            : "Login instead ➜]"}
-                    </button>
+                   <button
+                            type="button"
+                             className="auth-switch-button"
+                              onClick={() =>
+                                 setMode(mode === "login" ? "register" : "login")
+                                   }
+>
+                             {mode === "login"
+                              ? "Create account"
+                             : "Login instead"}
+                              </button>
 
                 </div>
 
