@@ -35,7 +35,7 @@ function UserDashboard({ user, onLogout }) {
 
     const [statusMessage, setStatusMessage] = useState("");
     const [actualWeight, setActualWeight] = useState("");
-
+    const [isBooking, setIsBooking] = useState(false);
     const [segregationWeights, setSegregationWeights] = useState({
         Paper: "",
         Plastic: "",
@@ -78,7 +78,10 @@ function UserDashboard({ user, onLogout }) {
             ? Number(weight) * selectedMaterial.rate
             : 0;
 
-    const bookPickup = async () => {
+    
+const bookPickup = async () => {
+    if (isBooking) return;
+
     if (!pickupItems.length) {
         alert(t("addAtLeastOneScrapItem"));
         return;
@@ -94,14 +97,16 @@ function UserDashboard({ user, onLogout }) {
         return;
     }
 
-    try {
-        // 📍 Capture the pickup location for Smart Route Optimization.
-        // This works for USER and ORGANIZATION pickup requests.
-        let latitude = null;
-        let longitude = null;
+    setIsBooking(true);
+    setBookingMessage("");
 
+    let latitude = null;
+    let longitude = null;
+
+    try {
+        // GPS is optional. Booking must not depend on it.
         if ("geolocation" in navigator) {
-            setLocationStatus(`📍 ${t("gettingPickupLocation")}`);
+            setLocationStatus("📍 Checking pickup location...");
 
             try {
                 const position = await new Promise((resolve, reject) => {
@@ -109,9 +114,9 @@ function UserDashboard({ user, onLogout }) {
                         resolve,
                         reject,
                         {
-                            enableHighAccuracy: true,
-                            timeout: 10000,
-                            maximumAge: 60000
+                            enableHighAccuracy: false,
+                            timeout: 5000,
+                            maximumAge: 300000
                         }
                     );
                 });
@@ -119,49 +124,56 @@ function UserDashboard({ user, onLogout }) {
                 latitude = position.coords.latitude;
                 longitude = position.coords.longitude;
 
-                setLocationStatus(`✅ ${t("pickupLocationCaptured")}`);
-            } catch (locationError) {
-                console.warn(
-                    "Location unavailable:",
-                    locationError.message
-                );
+                setLocationStatus("✅ Pickup location captured.");
+            } catch (error) {
+                console.warn("GPS unavailable:", error.message);
 
-                setLocationStatus(`⚠️ ${t("locationPermissionUnavailable")}`);
+                setLocationStatus(
+                    "⚠️ GPS unavailable. Booking with address only."
+                );
             }
         } else {
-            setLocationStatus(`⚠️ ${t("geolocationNotSupported")}`);
+            setLocationStatus(
+                "⚠️ GPS unsupported. Booking with address only."
+            );
         }
 
+        // Submit exactly one booking request.
         const data = await api("/pickups", {
             method: "POST",
             body: JSON.stringify({
                 items: pickupItems,
                 segregation: pickupItems.map(item => ({
                     scrap: item.scrap,
-                    name: item.scrap?.name || "Scrap",
+                    name: scrap.find(s => s._id === item.scrap)?.name || "Scrap",
                     weight: Number(item.estimatedWeight)
                 })),
-                address,
+                address: address.trim(),
                 slot,
                 latitude,
                 longitude
             })
         });
 
-        setBookingMessage(`${t("pickupBookedSuccessfully")} ₹${data.estimatedAmount}`);
+        setBookingMessage(
+            `✅ ${t("pickupBookedSuccessfully")} ₹${data.estimatedAmount}`
+        );
 
         setPickupItems([]);
         setAddress("");
         setSlot("");
 
-        api("/pickups/mine")
-            .then(setMyPickups)
-            .catch(console.error);
+        const updatedPickups = await api("/pickups/mine");
+        setMyPickups(updatedPickups);
 
     } catch (error) {
-        alert(error.message);
+        console.error("Pickup booking failed:", error);
+        alert(error.message || "Pickup booking failed.");
+    } finally {
+        setIsBooking(false);
     }
 };
+
 
 
 // for piickup item 
@@ -930,9 +942,14 @@ const openReceipt = (pickup) => {
                                     </div>
                                 )}
 
-                                <button onClick={bookPickup} disabled={!pickupItems.length}>
-                                    🚚 Book Pickup
-                                </button>
+                                <button
+    type="button"
+    onClick={bookPickup}
+    disabled={!pickupItems.length || isBooking}
+>
+    {isBooking ? "⏳ Booking..." : "🚚 Book Pickup"}
+</button>
+
 
                                 {bookingMessage && (
                                     <div className="success-message">
