@@ -12,7 +12,22 @@ export async function requireAuth(req,res,next){
     next();
   }catch{ return res.status(401).json({message:'Invalid or expired token'}); }
 }
-export const allowRoles=(...roles)=>(req,res,next)=>{
-  if(!roles.includes(req.user.role)) return res.status(403).json({message:'Insufficient permissions'});
+export const allowRoles = (...roles) => (req, res, next) => {
+  console.log("===== ROLE DEBUG =====");
+  console.log("User ID:", req.user?._id);
+  console.log("User Role:", req.user?.role);
+  console.log("Allowed Roles:", roles);
+  console.log("======================");
+
+  if (!roles.includes(req.user.role)) {
+    return res.status(403).json({
+      message: "Insufficient permissions",
+      debug: {
+        userRole: req.user.role,
+        allowedRoles: roles
+      }
+    });
+  }
+
   next();
 };
