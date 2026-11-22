@@ -93,14 +93,14 @@ if (req.user.role === "ORGANIZATION" && kg < 50) {
 
 r.get(
     "/",
-    requireAuth,
+    
     async (_, res, next) => {
         try {
            
             const auctions = await Auction.find({
                 status: "OPEN"
             })
-                .populate("creator", "name email role")
+                .populate("creator", "name role verified")
                 .populate("materialRef", "name rate")
                 .sort("endsAt");
 

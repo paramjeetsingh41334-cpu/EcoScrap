@@ -4,7 +4,7 @@ import { api } from "../api.js";
 
 const SOCKET_URL = "http://localhost:8000";
 
-function LiveAuctions() {
+function LiveAuctions({ user, onRequireAuth }) {
     const [auctions, setAuctions] = useState([]);
     const [bids, setBids] = useState({});
     const [loading, setLoading] = useState(true);
@@ -69,8 +69,25 @@ function LiveAuctions() {
         };
     }, []);
 
+    
+
+    
     const placeBid = async (auction) => {
-        const price = Number(bids[auction._id]);
+
+    if (!user) {
+        onRequireAuth?.({
+            type: "PLACE_BID",
+            payload: { auctionId: auction._id }
+        });
+        return;
+    }
+
+    if (user.role !== "RECYCLER") {
+        setMessage("Only recycler accounts can place bids.");
+        return;
+    }
+
+    const price = Number(bids[auction._id]);
 
         if (!price || price <= auction.currentBid) {
             setMessage(

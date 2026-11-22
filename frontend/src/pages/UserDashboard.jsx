@@ -13,8 +13,16 @@ import CreateAuction from "../components/CreateAuction.jsx";
 import CollectorDashboard from "./CollectorDashboard.jsx";
 import MyAuctions from "../components/MyAuction.jsx";
 import DashboardLayout from "../components/DashboardLayout.jsx";
+import LiveAuctions from "../components/LiveAuctions.jsx";
 
-function UserDashboard({ user, onLogout }) {
+function UserDashboard({
+    user,
+    onLogout,
+    onRequireAuth,
+    pendingAction,
+    onPendingActionHandled
+}) {
+    const isGuest = !user;
 
     const { t } = useLanguage();
 
@@ -36,6 +44,7 @@ function UserDashboard({ user, onLogout }) {
     const [statusMessage, setStatusMessage] = useState("");
     const [actualWeight, setActualWeight] = useState("");
     const [isBooking, setIsBooking] = useState(false);
+    const [resumePendingBooking, setResumePendingBooking] = useState(false);
     const [segregationWeights, setSegregationWeights] = useState({
         Paper: "",
         Plastic: "",
@@ -47,27 +56,33 @@ function UserDashboard({ user, onLogout }) {
     
 
     useEffect(() => {
+    // Public data: available to guests and logged-in users
+    api("/scrap")
+        .then(setScrap)
+        .catch(console.error);
 
-        api("/dashboard/summary")
-            .then(setSummary)
-            .catch(console.error);
+    // Private data: load only for authenticated users
+    if (!user) {
+        setSummary(null);
+        setMyPickups([]);
+        setAvailablePickups([]);
+        return;
+    }
 
-        api("/scrap")
-            .then(setScrap)
-            .catch(console.error);
+    api("/dashboard/summary")
+        .then(setSummary)
+        .catch(console.error);
 
-        api("/pickups/mine")
-          .then(setMyPickups)
-          .catch(console.error);
+    api("/pickups/mine")
+        .then(setMyPickups)
+        .catch(console.error);
 
-        // for collector dashboard
-        if (user.role === "COLLECTOR") {
+    if (user.role === "COLLECTOR") {
         api("/pickups/available")
-           .then(setAvailablePickups)
-           .catch(console.error);
-}
-
-    }, []);
+            .then(setAvailablePickups)
+            .catch(console.error);
+    }
+}, [user]);
 
     const selectedMaterial = scrap.find(
         item => item._id === selectedScrap
@@ -96,6 +111,19 @@ const bookPickup = async () => {
         alert(t("selectPickupSlot"));
         return;
     }
+
+    // Guest must log in before confirming the pickup
+    if (isGuest) {
+      onRequireAuth({
+        type: "BOOK_PICKUP",
+        payload: {
+            items: pickupItems,
+            address: address.trim(),
+            slot
+        }
+     });
+     return;
+}
 
     setIsBooking(true);
     setBookingMessage("");
@@ -173,6 +201,44 @@ const bookPickup = async () => {
         setIsBooking(false);
     }
 };
+
+// Restore guest pickup details after successful login
+useEffect(() => {
+    if (!user || pendingAction?.type !== "BOOK_PICKUP") {
+        return;
+    }
+
+    if (user.role !== "USER" && user.role !== "ORGANIZATION") {
+        alert("Please log in with a customer account to book a pickup.");
+        onPendingActionHandled?.();
+        return;
+    }
+
+    const payload = pendingAction.payload;
+
+    if (!payload?.items?.length || !payload.address || !payload.slot) {
+        alert("Pickup details are incomplete. Please try again.");
+        onPendingActionHandled?.();
+        return;
+    }
+
+    setPickupItems(payload.items);
+    setAddress(payload.address);
+    setSlot(payload.slot);
+    setActivePage("pickup");
+
+    setResumePendingBooking(true);
+
+    onPendingActionHandled?.();
+}, [user, pendingAction, onPendingActionHandled]);
+
+// Continue booking after pickup details have been restored
+useEffect(() => {
+    if (resumePendingBooking && user) {
+        setResumePendingBooking(false);
+        bookPickup();
+    }
+}, [resumePendingBooking, user]);
 
 
 
@@ -509,8 +575,9 @@ const openReceipt = (pickup) => {
                 <section className="hero">
 
                     <h2>
-                        {t("welcome")}, {user.name}
+                       {t("welcome")}, {user?.name || "Guest"}
                     </h2>
+
 
                     <p>
                         Connect households, collectors,
@@ -521,6 +588,8 @@ const openReceipt = (pickup) => {
 
 
                 {/* Statistics */}
+
+                {!isGuest && (
 
                 <div className="cards">
 
@@ -560,6 +629,7 @@ const openReceipt = (pickup) => {
                     </div>
 
                 </div>
+                )}
 
 
                 {/* Quick Actions */}
@@ -577,7 +647,8 @@ const openReceipt = (pickup) => {
             <strong>Book Pickup</strong>
             <small>Schedule a waste collection</small>
         </button>
-
+           
+           {!isGuest && (
         <button
             type="button"
             className="quick-action-button"
@@ -586,7 +657,7 @@ const openReceipt = (pickup) => {
             <span>📦</span>
             <strong>My Pickups</strong>
             <small>Track your pickup requests</small>
-        </button>
+        </button> )}
 
         <button
             type="button"
@@ -597,7 +668,8 @@ const openReceipt = (pickup) => {
             <strong>Marketplace</strong>
             <small>Explore scrap listings</small>
         </button>
-
+         
+         {!isGuest && (
         <button
             type="button"
             className="quick-action-button"
@@ -607,7 +679,9 @@ const openReceipt = (pickup) => {
             <strong>Transactions</strong>
             <small>View payments and history</small>
         </button>
+         )}
 
+        {!isGuest && (
         <button
             type="button"
             className="quick-action-button"
@@ -617,7 +691,8 @@ const openReceipt = (pickup) => {
             <strong>Traceability</strong>
             <small>Follow the waste journey</small>
         </button>
-
+        )}
+        {!isGuest && (
         <button
             type="button"
             className="quick-action-button"
@@ -627,6 +702,7 @@ const openReceipt = (pickup) => {
             <strong>Notifications</strong>
             <small>Check recent updates</small>
         </button>
+        )}
     </div>
 </section>
 {/* Environmental Impact */}
@@ -689,7 +765,7 @@ const openReceipt = (pickup) => {
                     </>
                 )}
 
-                {activePage === "notifications" && <Notifications />}
+                {activePage === "notifications" && !isGuest &&<Notifications />}
 
                 {activePage === "marketplace" && (
                     <>
@@ -697,26 +773,47 @@ const openReceipt = (pickup) => {
     <h3>🛒 Marketplace</h3>
     <p>Explore recyclable materials, requests and marketplace activity.</p>
 </section>
-<RecyclerMarketplace />
-<PurchaseRequests />
-<MyPurchaseRequests />
+
+<RecyclerMarketplace
+    user={user}
+    onRequireAuth={onRequireAuth}
+/>
+
+{(user?.role === "COLLECTOR" || user?.role === "ORGANIZATION") && (
+    <PurchaseRequests />
+)}
+
+{user?.role === "RECYCLER" && (
+    <MyPurchaseRequests />
+)}
 
 
-{user.role === "ORGANIZATION" && (
+{user?.role === "ORGANIZATION" && (
     <CreateAuction organizationMode={true} />
 )}
 
-{(user.role === "ORGANIZATION" || user.role === "COLLECTOR") && (
+{(user?.role === "ORGANIZATION" || user?.role === "COLLECTOR") && (
     <MyAuctions />
 )}
                     </>
                 )}
 
+                {activePage === "scrap-lots" && (
+                 <RecyclerMarketplace />
+                )}
+
                 {activePage === "traceability" && <WasteTraceability />}
 
-                {activePage === "transactions" && <TransactionHistory />}
+                {activePage === "auctions" && (
+                 <LiveAuctions
+                  user={user}
+                 onRequireAuth={onRequireAuth}
+                 />
+                )}
 
-                {activePage === "analytics" && (
+               {activePage === "transactions" && !isGuest && <TransactionHistory />}
+
+                {activePage === "analytics" &&  !isGuest && (
                     <section className="panel">
                         <h3>📈 Analytics</h3>
                         <p>Track your ScrapWala pickup, recycling and Green Credit activity.</p>
@@ -961,7 +1058,7 @@ const openReceipt = (pickup) => {
                     </>
                 )}
 
-                {activePage === "my-pickups" && (
+                {activePage === "my-pickups" && !isGuest && (
                     <>
 {/* Collector Dashboard */}
 
@@ -1198,15 +1295,15 @@ const openReceipt = (pickup) => {
             )}
         </p>
 
-        {user.role === "USER" &&
-            pickup.paymentStatus === "PENDING" && (
-                <button
-                    type="button"
-                    onClick={() => confirmPayment(pickup._id)}
-                >
-                    💰 {t("confirmPayment")}
-                </button>
-            )}
+        {(user?.role === "USER" || user?.role === "ORGANIZATION") &&
+    pickup.paymentStatus === "PENDING" && (
+        <button
+            type="button"
+            onClick={() => confirmPayment(pickup._id)}
+        >
+            💰 {t("confirmPayment")}
+        </button>
+    )}
 
         <button
             type="button"
@@ -1363,7 +1460,7 @@ const openReceipt = (pickup) => {
 
                 </section>
 
-                <CreateScrapLot />
+                {user?.role === "COLLECTOR" && <CreateScrapLot />}
 
 
                 {/* Main Flow */}
@@ -1401,15 +1498,17 @@ const openReceipt = (pickup) => {
                         <span> Home</span>
                     </button>
 
-                    <button
-                        type="button"
-                        className={`mobile-bottom-nav-item ${activePage === "my-pickups" ? "active" : ""}`}
-                        aria-current={activePage === "my-pickups" ? "page" : undefined}
-                        onClick={() => setActivePage("my-pickups")}
-                    >
-                        <span className="mobile-bottom-nav-icon" aria-hidden="true">🚚</span>
-                        <span>Pickups</span>
-                    </button>
+                    {!isGuest && (
+                        <button
+                            type="button"
+                            className={`mobile-bottom-nav-item ${activePage === "my-pickups" ? "active" : ""}`}
+                            aria-current={activePage === "my-pickups" ? "page" : undefined}
+                            onClick={() => setActivePage("my-pickups")}
+                        >
+                            <span className="mobile-bottom-nav-icon" aria-hidden="true">🚚</span>
+                            <span>Pickups</span>
+                        </button>
+                    )}
 
                     <button
                         type="button"

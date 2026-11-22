@@ -1,18 +1,30 @@
+
 import ListingDetails from "./ListingDetails";
 
 function MarketplaceCard({
     item,
     selectedListing,
     viewDetails,
-    requestPurchase
+    requestPurchase,
+    user,
+    onRequireAuth
 }) {
     const sellerRole = item.seller?.role;
+    const isGuest = !user;
+
+    const handlePurchase = () => {
+        if (isGuest) {
+            onRequireAuth?.();
+            return;
+        }
+
+        requestPurchase(item);
+    };
 
     return (
         <div className="marketplace-card">
             <div className="marketplace-card-top">
                 <div className="marketplace-card-icon">📦</div>
-
                 <span className="marketplace-card-status">
                     AVAILABLE
                 </span>
@@ -42,7 +54,6 @@ function MarketplaceCard({
 
                         <div className="marketplace-seller-info">
                             <span>Seller</span>
-
                             <strong>
                                 {item.seller.name || "Seller"}
                             </strong>
@@ -77,13 +88,12 @@ function MarketplaceCard({
                         className="marketplace-details-button"
                         onClick={() => viewDetails(item)}
                     >
-                        View Details
-                        <span>→</span>
+                        View Details <span>→</span>
                     </button>
 
                     <button
                         className="marketplace-purchase-button"
-                        onClick={() => requestPurchase(item)}
+                        onClick={handlePurchase}
                     >
                         🛒 Request Purchase
                     </button>

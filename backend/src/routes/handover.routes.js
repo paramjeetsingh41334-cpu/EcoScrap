@@ -4,11 +4,11 @@ import ScrapLot from "../models/ScrapLot.js";
 import Transaction from "../models/Transaction.js";
 import Trace from "../models/Trace.js";
 import Notification from "../models/Notification.js";
-import { requireAuth } from "../middleware/auth.js";
+import { requireAuth, allowRoles } from "../middleware/auth.js";
 
 const router = express.Router();
 
-router.post("/:id/complete", requireAuth, async (req, res) => {
+router.post("/:id/complete", requireAuth,  allowRoles("RECYCLER"),async (req, res) => {
     try {
         console.log("========== HANDOVER START ==========");
         console.log("Lot ID:", req.params.id);

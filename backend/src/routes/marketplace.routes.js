@@ -13,7 +13,7 @@ const r = Router();
 
 r.get(
     "/",
-    requireAuth,
+    
     async (_, res, next) => {
         try {
             const listings = await Marketplace.find({
@@ -61,7 +61,7 @@ r.post(
 r.patch(
     "/:id/request",
     requireAuth,
-    allowRoles("RECYCLER", "COLLECTOR"),
+    allowRoles("RECYCLER"),
     async (req, res, next) => {
         try {
             const listing = await Marketplace.findOneAndUpdate(

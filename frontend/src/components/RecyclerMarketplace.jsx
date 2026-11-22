@@ -3,7 +3,7 @@ import { api } from "../api.js";
 import CreateListing from "./CreateListing";
 import MarketplaceCard from "./MarketplaceCard";
 
-function RecyclerMarketplace() {
+function RecyclerMarketplace({ user, onRequireAuth }) {
     const [listings, setListings] = useState([]);
     const [loading, setLoading] = useState(true);
 
@@ -53,6 +53,11 @@ function RecyclerMarketplace() {
     const createListing = async (e) => {
         e.preventDefault();
 
+        if (!user) {
+            onRequireAuth?.();
+             return;
+            }
+
         if (!material || !kg || !price) {
             setMessage("Please fill all fields.");
             return;
@@ -87,7 +92,12 @@ function RecyclerMarketplace() {
     };
 
     // Request marketplace purchase
-    const requestPurchase = async (listing) => {
+    const requestPurchase = async  (listing) => {
+        if (!user) {
+            onRequireAuth?.();
+         return;
+         }
+
         try {
             await api(`/marketplace/${listing._id}/request`, {
                 method: "PATCH"
@@ -106,6 +116,10 @@ function RecyclerMarketplace() {
 
     // Request a digital scrap lot
     const requestScrapLot = async (lot) => {
+    if (!user) {
+    onRequireAuth?.();
+    return;
+    }
         try {
             await api(`/scrap-lots/${lot._id}/request`, {
                 method: "POST"
@@ -512,7 +526,9 @@ function RecyclerMarketplace() {
             </section>
 
             {/* CREATE MARKETPLACE LISTING */}
-            <CreateListing
+            <CreateListing 
+                user={user}
+                onRequireAuth={onRequireAuth}
                 material={material}
                 setMaterial={setMaterial}
                 kg={kg}
@@ -585,7 +601,9 @@ function RecyclerMarketplace() {
                 {!loading && listings.length > 0 && (
                     <div className="marketplace-grid">
                         {listings.map((item) => (
-                            <MarketplaceCard
+                            <MarketplaceCard 
+                                user={user}
+                                onRequireAuth={onRequireAuth}
                                 key={item._id}
                                 item={item}
                                 selectedListing={selectedListing}

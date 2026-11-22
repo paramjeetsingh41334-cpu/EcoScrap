@@ -17185,3 +17185,14 @@ img {
 }
 
 
+
+
+.auth-close-button {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    border: none;
+    background: transparent;
+    font-size: 22px;
+    cursor: pointer;
+}

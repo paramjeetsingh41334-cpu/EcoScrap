@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { api } from "../api.js";
 
-function Login({ onAuth }) {
+function Login({ onAuth, onClose}) {
     const [mode, setMode] = useState("login");
 
     const [form, setForm] = useState({
@@ -31,6 +31,17 @@ function Login({ onAuth }) {
         <div className="auth-page">
 
             <div className="auth-card">
+
+                {onClose && (
+    <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close login"
+        className="auth-close-button"
+    >
+        ✕
+    </button>
+)}
 
                 {/* Brand */}
                 <div className="auth-brand">

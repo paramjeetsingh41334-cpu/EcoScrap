@@ -1,3 +1,4 @@
+
 function CreateListing({
     material,
     setMaterial,
@@ -6,15 +7,26 @@ function CreateListing({
     price,
     setPrice,
     createListing,
-    message
+    message,
+    user,
+    onRequireAuth
 }) {
+    const handleSubmit = (e) => {
+        e.preventDefault();
+
+        if (!user) {
+            onRequireAuth?.();
+            return;
+        }
+
+        createListing(e);
+    };
+
     return (
         <div className="marketplace-create">
-
             <h4>➕ Create Marketplace Listing</h4>
 
-            <form onSubmit={createListing}>
-
+            <form onSubmit={handleSubmit}>
                 <input
                     type="text"
                     placeholder="Material (e.g. Cardboard)"
@@ -39,7 +51,6 @@ function CreateListing({
                 <button type="submit">
                     ➕ Create Listing
                 </button>
-
             </form>
 
             {message && (
@@ -47,7 +58,6 @@ function CreateListing({
                     {message}
                 </p>
             )}
-
         </div>
     );
 }

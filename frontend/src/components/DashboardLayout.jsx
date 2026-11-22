@@ -1,4 +1,13 @@
+
 import { useMemo, useState } from "react";
+
+const guestNavigation = [
+  { id: "dashboard", label: "Home", icon: "🏠" },
+  { id: "pickup", label: "Book Pickup", icon: "🚚" },
+  { id: "marketplace", label: "Marketplace", icon: "🏪" },
+  { id: "scrap-lots", label: "Available Scrap Lots", icon: "♻️" },
+  { id: "auctions", label: "Live Auctions", icon: "🔨" },
+];
 
 const navigationByRole = {
   USER: [
@@ -55,13 +64,17 @@ function getRoleName(role) {
       return "Collector";
     case "RECYCLER":
       return "Recycler";
-    default:
+    case "ORGANIZATION":
+      return "Organization";
+    case "USER":
       return "User";
+    default:
+      return "Guest";
   }
 }
 
 function getInitials(user) {
-  if (!user) return "U";
+  if (!user) return "G";
 
   const name =
     user.name ||
@@ -81,6 +94,7 @@ function getInitials(user) {
 export default function DashboardLayout({
   user,
   onLogout,
+  onRequireAuth,
   activePage = "dashboard",
   onNavigate,
   children,
@@ -89,12 +103,15 @@ export default function DashboardLayout({
   const [search, setSearch] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
 
+  const isGuest = !user;
   const role = String(user?.role || "USER").toUpperCase();
 
-  const navigation =
-  navigationByRole[role] || navigationByRole.USER;
+  const navigation = isGuest
+    ? guestNavigation
+    : navigationByRole[role] || navigationByRole.USER;
+
   const filteredPages = useMemo(() => {
-  const query = search.trim().toLowerCase();
+    const query = search.trim().toLowerCase();
 
     if (!query) return [];
 
@@ -103,8 +120,7 @@ export default function DashboardLayout({
         .toLowerCase()
         .includes(query)
     );
-  }, [search]);
-  
+  }, [search, navigation]);
 
   const handleNavigation = (page) => {
     onNavigate?.(page);
@@ -116,6 +132,11 @@ export default function DashboardLayout({
   const handleLogout = () => {
     setSidebarOpen(false);
     onLogout?.();
+  };
+
+  const handleLogin = () => {
+    setSidebarOpen(false);
+    onRequireAuth?.();
   };
 
   const handleSearchSubmit = (event) => {
@@ -156,16 +177,14 @@ export default function DashboardLayout({
             </div>
           </div>
 
-        <button
-          type="button"
-          className="dashboard-sidebar-close"
-          onClick={() => {
-              setSidebarOpen(false);
-           }}
-           aria-label="Close menu"
-           >
-           ✕
-           </button>
+          <button
+            type="button"
+            className="dashboard-sidebar-close"
+            onClick={() => setSidebarOpen(false)}
+            aria-label="Close menu"
+          >
+            ✕
+          </button>
         </div>
 
         <div className="dashboard-user-card">
@@ -178,7 +197,7 @@ export default function DashboardLayout({
               {user?.name ||
                 user?.fullName ||
                 user?.username ||
-                "Scrap wala User"}
+                (isGuest ? "Guest User" : "ScrapWala User")}
             </strong>
 
             <span>{getRoleName(user?.role)}</span>
@@ -187,7 +206,7 @@ export default function DashboardLayout({
 
         <nav className="dashboard-navigation">
           <div className="dashboard-navigation-title">
-            MAIN MENU
+            {isGuest ? "EXPLORE SCRAPWALA" : "MAIN MENU"}
           </div>
 
           {navigation.map((item) => (
@@ -213,108 +232,123 @@ export default function DashboardLayout({
         </nav>
 
         <div className="dashboard-sidebar-bottom">
-          <button
-            type="button"
-            className="dashboard-nav-item dashboard-logout-button"
-            onClick={handleLogout}
-          >
-            <span className="dashboard-nav-icon">🚪</span>
-            <span className="dashboard-nav-label">Logout</span>
-          </button>
+          {isGuest ? (
+            <button
+              type="button"
+              className="dashboard-nav-item dashboard-logout-button"
+              onClick={handleLogin}
+            >
+              <span className="dashboard-nav-icon">🔐</span>
+              <span className="dashboard-nav-label">
+                Login / Register
+              </span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="dashboard-nav-item dashboard-logout-button"
+              onClick={handleLogout}
+            >
+              <span className="dashboard-nav-icon">🚪</span>
+              <span className="dashboard-nav-label">Logout</span>
+            </button>
+          )}
         </div>
       </aside>
 
       <div className="dashboard-main">
-       <header className="dashboard-topbar">
-  <div className="dashboard-topbar-left">
-    <button
-      type="button"
-      className="dashboard-menu-button"
-      onClick={() => setSidebarOpen(true)}
-      aria-label="Open menu"
-    >
-      ☰
-    </button>
+        <header className="dashboard-topbar">
+          <div className="dashboard-topbar-left">
+            <button
+              type="button"
+              className="dashboard-menu-button"
+              onClick={() => setSidebarOpen(true)}
+              aria-label="Open menu"
+            >
+              ☰
+            </button>
 
-    <div className="dashboard-page-heading">
-      <h1>{currentPage}</h1>
-      <p>Manage your ScarpWala activities</p>
-    </div>
-  </div>
-
-  <div className="dashboard-topbar-right">
-    <form
-      className="dashboard-search"
-      role="search"
-      onSubmit={handleSearchSubmit}
-    >
-      <span aria-hidden="true">🔍</span>
-
-      <input
-        type="search"
-        value={search}
-        placeholder="Search features..."
-        aria-label="Search dashboard features"
-        aria-expanded={searchOpen && search.trim().length > 0}
-        onFocus={() => setSearchOpen(true)}
-        onChange={(event) => {
-          setSearch(event.target.value);
-          setSearchOpen(true);
-        }}
-        onKeyDown={(event) => {
-          if (event.key === "Escape") {
-            setSearchOpen(false);
-          }
-        }}
-      />
-
-      {search && (
-        <button
-          type="button"
-          className="dashboard-search-clear"
-          aria-label="Clear search"
-          onClick={() => {
-            setSearch("");
-            setSearchOpen(false);
-          }}
-        >
-          ✕
-        </button>
-      )}
-
-      {searchOpen && search.trim() && (
-        <div className="dashboard-search-results">
-          {filteredPages.length > 0 ? (
-            filteredPages.map((item) => (
-              <button
-                key={item.id}
-                type="button"
-                className="dashboard-search-result"
-                onClick={() => handleNavigation(item.id)}
-              >
-                <span>{item.icon}</span>
-                <span>{item.label}</span>
-                <span aria-hidden="true">→</span>
-              </button>
-            ))
-          ) : (
-            <div className="dashboard-search-empty">
-              No matching features found.
+            <div className="dashboard-page-heading">
+              <h1>{currentPage}</h1>
+              <p>Manage your ScrapWala activities</p>
             </div>
-          )}
-        </div>
-      )}
-    </form>
+          </div>
 
-    <div className="dashboard-role-badge">
-      {getRoleName(user?.role)}
-    </div>
+          <div className="dashboard-topbar-right">
+            <form
+              className="dashboard-search"
+              role="search"
+              onSubmit={handleSearchSubmit}
+            >
+              <span aria-hidden="true">🔍</span>
 
-    <div className="dashboard-topbar-avatar">
-      {getInitials(user)}
-    </div>
-  </div>
-</header>
+              <input
+                type="search"
+                value={search}
+                placeholder="Search features..."
+                aria-label="Search dashboard features"
+                aria-expanded={
+                  searchOpen && search.trim().length > 0
+                }
+                onFocus={() => setSearchOpen(true)}
+                onChange={(event) => {
+                  setSearch(event.target.value);
+                  setSearchOpen(true);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Escape") {
+                    setSearchOpen(false);
+                  }
+                }}
+              />
+
+              {search && (
+                <button
+                  type="button"
+                  className="dashboard-search-clear"
+                  aria-label="Clear search"
+                  onClick={() => {
+                    setSearch("");
+                    setSearchOpen(false);
+                  }}
+                >
+                  ✕
+                </button>
+              )}
+
+              {searchOpen && search.trim() && (
+                <div className="dashboard-search-results">
+                  {filteredPages.length > 0 ? (
+                    filteredPages.map((item) => (
+                      <button
+                        key={item.id}
+                        type="button"
+                        className="dashboard-search-result"
+                        onClick={() => handleNavigation(item.id)}
+                      >
+                        <span>{item.icon}</span>
+                        <span>{item.label}</span>
+                        <span aria-hidden="true">→</span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="dashboard-search-empty">
+                      No matching features found.
+                    </div>
+                  )}
+                </div>
+              )}
+            </form>
+
+            <div className="dashboard-role-badge">
+              {getRoleName(user?.role)}
+            </div>
+
+            <div className="dashboard-topbar-avatar">
+              {getInitials(user)}
+            </div>
+          </div>
+        </header>
 
         <main
           className="dashboard-content"

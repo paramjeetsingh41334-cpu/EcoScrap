@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { api } from "../api.js";
+import LiveAuctions from "../components/LiveAuctions.jsx";
 
 function MyAuctions() {
     const [auctions, setAuctions] = useState([]);
